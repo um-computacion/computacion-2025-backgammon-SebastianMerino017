@@ -1,5 +1,4 @@
 import unittest
-import unittest
 import sys
 import os
 
@@ -26,7 +25,17 @@ class TestChecker(unittest.TestCase):
         checker.set_position(10)
         self.assertEqual(checker.get_position(), 10)
 
+    def test_capture(self):
+        checker = Checker("green")
+        checker.capture()
+        self.assertTrue(checker.is_captured())
+        self.assertEqual(checker.get_position(), None)
 
+    def test_release(self):
+        checker = Checker("blue", 5)
+        checker.release(10)
+        self.assertFalse(checker.is_captured())
+        self.assertEqual(checker.get_position(), 10)    
 
 if __name__ == '__main__':
     unittest.main()
