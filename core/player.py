@@ -39,3 +39,13 @@ class Player:
     def end_turn(self) -> None:
         if self.is_my_turn():
             Player.switch_turn()
+
+    def bear_off_piece(self) -> bool:
+        if not self.is_my_turn():
+            return False
+        if Player.__game_pieces__[self.__color__]['on_board'] > 0:
+            Player.__game_pieces__[self.__color__]['on_board'] -= 1
+            Player.__game_pieces__[self.__color__]['off_board'] += 1
+            return True
+        return False
+    
