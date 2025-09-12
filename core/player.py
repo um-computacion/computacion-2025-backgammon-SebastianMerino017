@@ -49,3 +49,27 @@ class Player:
             return True
         return False
     
+    def is_winner(self) -> bool:
+        return Player.__game_pieces__[self.__color__]['off_board'] == 15
+
+    def get_pieces_count(self) -> dict:
+        pieces = Player.__game_pieces__[self.__color__]
+        return {
+            'on_board': pieces['on_board'],
+            'off_board': pieces['off_board'],
+            'total': pieces['on_board'] + pieces['off_board']
+        }
+
+    def get_status(self) -> dict:
+        return {
+            'name': self.__name__,
+            'color': self.__color__,
+            'is_my_turn': self.is_my_turn(),
+            'pieces': self.get_pieces_count(),
+            'is_dead': self.__is_dead__,
+            'score': self.__score__,
+            'is_winner': self.is_winner(),
+            'current_turn': Player.__current_turn__,
+            'turn_counter': Player.__turn_counter__
+        }
+    
