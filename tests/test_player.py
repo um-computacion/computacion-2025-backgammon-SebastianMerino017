@@ -53,3 +53,7 @@ class TestPlayer(unittest.TestCase):
         self.assertEqual(Player.game_pieces['white']['on_board'], 0)
         self.assertEqual(Player.game_pieces['white']['off_board'], 1)  
 
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+
