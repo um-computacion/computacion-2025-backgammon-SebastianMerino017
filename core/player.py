@@ -12,18 +12,18 @@ class Player:
         self.name = name
         self.color = color
         self.score = 0
-       
+
         if Player.current_turn is None:
             Player.current_turn = "white"
-    
+
     def __str__(self):
         return f"{self.name} ({self.color})"
-    
+
     @classmethod
     def switch_turn(cls):
         cls.turn_counter += 1
         cls.current_turn = "black" if cls.current_turn == "white" else "white"
-    
+
     @classmethod
     def reset_game(cls):
         cls.current_turn = "white"
@@ -33,43 +33,48 @@ class Player:
             'black': {'on_board': 15, 'off_board': 0}
         }
 
-    def is_my_turn(self) -> bool:
-        return Player.__current_turn__ == self.__color__
-    
-    def end_turn(self) -> None:
+    def is_my_turn(self):
+        return Player.current_turn == self.color
+
+    def end_turn(self):
         if self.is_my_turn():
             Player.switch_turn()
 
-    def bear_off_piece(self) -> bool:
+    def roll_dice(self):
+        if not self.is_my_turn():
+            return None
+        d1 = random.randint(1, 6)
+        d2 = random.randint(1, 6)
+        return [d1, d2]
+
+    def play_dice(self, dice: list[int]) -> bool:
+        """Guardar los valores de los dados solo si es su turno"""
         if not self.is_my_turn():
             return False
-        if Player.__game_pieces__[self.__color__]['on_board'] > 0:
-            Player.__game_pieces__[self.__color__]['on_board'] -= 1
-            Player.__game_pieces__[self.__color__]['off_board'] += 1
+        self.dice = dice
+        return True
+
+    def bear_off_piece(self):
+        if not self.is_my_turn():
+            return False
+        if Player.game_pieces[self.color]['on_board'] > 0:
+            Player.game_pieces[self.color]['on_board'] -= 1
+            Player.game_pieces[self.color]['off_board'] += 1
             return True
         return False
-    
-    def is_winner(self) -> bool:
-        return Player.__game_pieces__[self.__color__]['off_board'] == 15
 
-    def get_pieces_count(self) -> dict:
-        pieces = Player.__game_pieces__[self.__color__]
-        return {
-            'on_board': pieces['on_board'],
-            'off_board': pieces['off_board'],
-            'total': pieces['on_board'] + pieces['off_board']
-        }
+    def is_winner(self):
+        return Player.game_pieces[self.color]['off_board'] == 15
 
-    def get_status(self) -> dict:
+    def get_pieces_count(self):
+        return Player.game_pieces[self.color].copy()
+
+    def get_status(self):
         return {
-            'name': self.__name__,
-            'color': self.__color__,
+            'name': self.name,
+            'color': self.color,
             'is_my_turn': self.is_my_turn(),
             'pieces': self.get_pieces_count(),
-            'is_dead': self.__is_dead__,
-            'score': self.__score__,
-            'is_winner': self.is_winner(),
-            'current_turn': Player.__current_turn__,
-            'turn_counter': Player.__turn_counter__
+            'score': self.score
         }
-    
+
