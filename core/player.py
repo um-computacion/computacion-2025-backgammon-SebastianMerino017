@@ -12,6 +12,7 @@ class Player:
         self.name = name
         self.color = color
         self.score = 0
+
         if Player.current_turn is None:
             Player.current_turn = "white"
 
@@ -42,7 +43,16 @@ class Player:
     def roll_dice(self):
         if not self.is_my_turn():
             return None
-        return [random.randint(1, 6), random.randint(1, 6)]
+        d1 = random.randint(1, 6)
+        d2 = random.randint(1, 6)
+        return [d1, d2]
+
+    def play_dice(self, dice: list[int]) -> bool:
+        """Guardar los valores de los dados solo si es su turno"""
+        if not self.is_my_turn():
+            return False
+        self.dice = dice
+        return True
 
     def bear_off_piece(self):
         if not self.is_my_turn():
@@ -57,9 +67,14 @@ class Player:
         return Player.game_pieces[self.color]['off_board'] == 15
 
     def get_pieces_count(self):
-        pieces = Player.game_pieces[self.color]
+        return Player.game_pieces[self.color].copy()
+
+    def get_status(self):
         return {
-            'on_board': pieces['on_board'],
-            'off_board': pieces['off_board'],
-            'total': pieces['on_board'] + pieces['off_board']
+            'name': self.name,
+            'color': self.color,
+            'is_my_turn': self.is_my_turn(),
+            'pieces': self.get_pieces_count(),
+            'score': self.score
         }
+

@@ -32,21 +32,19 @@ class TestPlayer(unittest.TestCase):
     def test_roll_dice_invalid_turn(self):
         self.assertIsNone(self.p2.roll_dice())
 
-    from unittest.mock import patch
-
-    def test_play_dice_valid_turn(self):
-        with patch("random.randint", side_effect=[1, 2]):
-            dice = self.p1.roll_dice()
-        self.p1.play_dice(dice)
+    @patch('random.randint', side_effect=[1, 2])
+    def test_play_dice_valid_turn(self, mock_randint):
+        dice = self.p1.roll_dice()
+        result = self.p1.play_dice(dice)
+        self.assertTrue(result)
         self.assertEqual(self.p1.dice, [1, 2])
-        self.assertEqual(self.p1.dice[0], 1)
-        self.assertEqual(self.p1.dice[1], 2)
 
-    def test_play_dice_invalid_turn(self):
-        with patch("random.randint", side_effect=[1, 2]):
-            dice = self.p1.roll_dice()
-        self.p2.play_dice(dice)
-        self.assertEqual(self.p2.dice, [1, 2])
-        self.assertEqual(self.p2.dice[0], 1)
-        self.assertEqual(self.p2.dice[1], 2)
+    @patch('random.randint', side_effect=[1, 2])
+    def test_play_dice_invalid_turn(self, mock_randint):
+        dice = self.p1.roll_dice()
+        result = self.p2.play_dice(dice)
+        self.assertFalse(result)
+        self.assertFalse(hasattr(self.p2, "dice"))
+
+        
 
