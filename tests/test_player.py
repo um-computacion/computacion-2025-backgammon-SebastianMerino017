@@ -46,5 +46,10 @@ class TestPlayer(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(hasattr(self.p2, "dice"))
 
-        
+    def test_bear_off_piece_valid(self):
+        Player.game_pieces['white']['on_board'] = 1
+        result = self.p1.bear_off_piece()
+        self.assertTrue(result)
+        self.assertEqual(Player.game_pieces['white']['on_board'], 0)
+        self.assertEqual(Player.game_pieces['white']['off_board'], 1)  
 
