@@ -41,6 +41,10 @@ class Board:
                     result_row.append(' ')
         return result_board
 
-
+    def get_piece(self, col):
+        if self.pos[col][0] == 'white':
+            return 'W'
+        else:
+            return 'B'
 
     
