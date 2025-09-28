@@ -19,6 +19,28 @@ class Board:
         self.pos[5] = ["black", 5]
 
 
-    
+    def draw(self):
+        result_board = [] 
+        for col in range(11, -1, -1):
+            result_row = []
+            result_board.append(result_row)
+            for row in range(0, 5):
+                if self.pos[col] is not None:
+                    if self.pos[col][1] > row:
+                        if row < 4:
+                            piece = self.get_piece(col)
+                        else:
+                            if self.pos[col][1] <= 5:
+                                piece = self.get_piece(col)
+                            else:
+                                piece = str(self.pos[col][1] - 4)
+                        result_row.append(piece)
+                    else:
+                        result_row.append(' ')    
+                else:
+                    result_row.append(' ')
+        return result_board
+
+
 
     
