@@ -3,7 +3,7 @@ class Board:
         self.positions = {}
         self.bar = {"white": 0, "black": 0}
         self.off_board = {"white": 0, "black": 0}
-        self.setup_initial_positions()
+        self.setup_initial_position()
 
     def setup_initial_position(self):
         self.pos = [None for _ in range(24)]
@@ -46,5 +46,56 @@ class Board:
             return 'W'
         else:
             return 'B'
+        
+    def draw_full_board(self):
+        upper_board = []
+        for col in range(12, 24):
+            result_row = []
+            upper_board.append(result_row)
+            
+            for row in range(0, 5):
+                if self.pos[col] is not None:
+                    if self.pos[col][1] > row:
+                        if row < 4:
+                            piece = self.get_piece(col)
+                        else:
+                            if self.pos[col][1] <= 5:
+                                piece = self.get_piece(col)
+                            else:
+                                piece = str(self.pos[col][1] - 4)
+                        result_row.append(piece)
+                    else:
+                        result_row.append(' ')
+                else:
+                    result_row.append(' ')
+        
+        lower_board = []
+        for col in range(11, -1, -1):
+            result_row = []
+            lower_board.append(result_row)
+            
+            for row in range(0, 5):
+                if self.pos[col] is not None:
+                    if self.pos[col][1] > row:
+                        if row < 4:
+                            piece = self.get_piece(col)
+                        else:
+                            if self.pos[col][1] <= 5:
+                                piece = self.get_piece(col)
+                            else:
+                                piece = str(self.pos[col][1] - 4)
+                        result_row.append(piece)
+                    else:
+                        result_row.append(' ')
+                else:
+                    result_row.append(' ')
+        
+        return {"upper": upper_board, "lower": lower_board}
+    
+
+
+
+
+
 
     
