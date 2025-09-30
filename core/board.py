@@ -92,8 +92,11 @@ class Board:
         
         return {"upper": upper_board, "lower": lower_board}
     
-
-
+    def get_piece(self, col):
+        if self.pos[col][0] == 'white':
+            return 'W'
+        else:
+            return 'B'
 
 
 
