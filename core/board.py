@@ -136,4 +136,8 @@ class Board:
         print(f"\nFichas fuera del tablero -> Blanco: {self.off_board['white']}, Negro: {self.off_board['black']}")
         print("=" * 50)
 
+    def is_valid_position(self, pos):
+        return isinstance(pos, int) and 0 <= pos <= 23
+    
+
     
