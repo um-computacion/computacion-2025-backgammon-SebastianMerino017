@@ -139,5 +139,9 @@ class Board:
     def is_valid_position(self, pos):
         return isinstance(pos, int) and 0 <= pos <= 23
     
-
+    def get_position_info(self, pos):
+        if not self.is_valid_position(pos):
+            return None
+        return self.pos[pos]
+    
     
