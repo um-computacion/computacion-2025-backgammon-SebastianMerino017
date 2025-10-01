@@ -98,7 +98,42 @@ class Board:
         else:
             return 'B'
 
-
-
+    def display_board_console(self):
+        print("=" * 50)
+        print("         TABLERO DE BACKGAMMON")
+        print("=" * 50)
+        
+        print(f"Barra -> Blanco: {self.bar['white']}, Negro: {self.bar['black']}")
+        print()
+        
+        print("Posiciones 13-24:")
+        for i in range(12, 24):
+            if self.pos[i] is not None:
+                color = "W" if self.pos[i][0] == "white" else "B"
+                count = self.pos[i][1]
+                print(f"{i+1:2d}: {color}{count}", end="  ")
+            else:
+                print(f"{i+1:2d}: --", end="  ")
+            
+            if i == 17:
+                print("| ", end="")
+        
+        print("\n" + "-" * 50)
+        
+        print("Posiciones 12-1:")
+        for i in range(11, -1, -1):
+            if self.pos[i] is not None:
+                color = "W" if self.pos[i][0] == "white" else "B"
+                count = self.pos[i][1]
+                print(f"{i+1:2d}: {color}{count}", end="  ")
+            else:
+                print(f"{i+1:2d}: --", end="  ")
+            
+            if i == 6:
+                print("| ", end="")
+        
+        print()
+        print(f"\nFichas fuera del tablero -> Blanco: {self.off_board['white']}, Negro: {self.off_board['black']}")
+        print("=" * 50)
 
     
