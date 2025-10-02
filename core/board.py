@@ -159,3 +159,29 @@ class Board:
         
         return False
     
+    def move_piece(self, from_pos, to_pos, color):
+        if not self.is_valid_position(from_pos) or not self.is_valid_position(to_pos):
+            return False
+        
+        if self.pos[from_pos] is None or self.pos[from_pos][0] != color:
+            return False
+        
+        if not self.can_place_piece(to_pos, color):
+            return False
+        
+        if self.pos[to_pos] is not None and self.pos[to_pos][0] != color:
+            enemy_color = self.pos[to_pos][0]
+            self.bar[enemy_color] += 1
+            self.pos[to_pos] = None
+        
+        self.pos[from_pos][1] -= 1
+        if self.pos[from_pos][1] == 0:
+            self.pos[from_pos] = None
+        
+        if self.pos[to_pos] is None:
+            self.pos[to_pos] = [color, 1]
+        else:
+            self.pos[to_pos][1] += 1
+        
+        return True
+    
