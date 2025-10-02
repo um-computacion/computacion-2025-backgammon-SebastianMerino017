@@ -144,4 +144,18 @@ class Board:
             return None
         return self.pos[pos]
     
+    def can_place_piece(self, pos, color):
+        if not self.is_valid_position(pos):
+            return False
+        
+        if self.pos[pos] is None:
+            return True
+        
+        if self.pos[pos][0] == color:
+            return True
+        
+        if self.pos[pos][1] == 1:
+            return True
+        
+        return False
     
