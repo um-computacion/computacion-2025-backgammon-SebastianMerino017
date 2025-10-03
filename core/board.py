@@ -185,11 +185,25 @@ class Board:
         
         return True
     
-    def total_pieces(self, color):
-        on_board = sum(pos[1] for pos in self.pos if pos is not None and pos[0] == color)
-        in_bar = self.bar[color]
-        off = self.off_board[color]
-        return on_board + in_bar + off
+    def bear_off(self, pos, color):
+        if not self.is_valid_position(pos):
+            return False
+        
+        if self.pos[pos] is None or self.pos[pos][0] != color:
+            return False
+        
+        if color == "white" and not (18 <= pos <= 23):
+            return False
+        if color == "black" and not (0 <= pos <= 5):
+            return False
+        
+        self.pos[pos][1] -= 1
+        if self.pos[pos][1] == 0:
+            self.pos[pos] = None
+        
+        self.off_board[color] += 1
+        return True
+
 
     
 
