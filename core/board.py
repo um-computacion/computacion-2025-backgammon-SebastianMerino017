@@ -228,6 +228,24 @@ class Board:
             self.pos[pos][1] += 1
         
         return True
+    
+    def count_pieces(self, color):
+        count = 0
+        
+        for pos in self.pos:
+            if pos is not None and pos[0] == color:
+                count += pos[1]
+        
+        count += self.bar[color]
+        
+        return count
+    
+    def get_state(self):
+        return {
+            "positions": self.pos.copy(),
+            "bar": self.bar.copy(),
+            "off_board": self.off_board.copy()
+        }
 
     
 
