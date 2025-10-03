@@ -185,3 +185,11 @@ class Board:
         
         return True
     
+    def total_pieces(self, color):
+        on_board = sum(pos[1] for pos in self.pos if pos is not None and pos[0] == color)
+        in_bar = self.bar[color]
+        off = self.off_board[color]
+        return on_board + in_bar + off
+
+    
+
