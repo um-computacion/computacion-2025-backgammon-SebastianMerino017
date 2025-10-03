@@ -204,6 +204,30 @@ class Board:
         self.off_board[color] += 1
         return True
 
+    def enter_from_bar(self, pos, color):
+        if self.bar[color] == 0:
+            return False
+        
+        if not self.can_place_piece(pos, color):
+            return False
+        
+        if color == "white" and not (18 <= pos <= 23):
+            return False
+        if color == "black" and not (0 <= pos <= 5):
+            return False
+        
+        if self.pos[pos] is not None and self.pos[pos][0] != color:
+            enemy_color = self.pos[pos][0]
+            self.bar[enemy_color] += 1
+            self.pos[pos] = None
+        
+        self.bar[color] -= 1
+        if self.pos[pos] is None:
+            self.pos[pos] = [color, 1]
+        else:
+            self.pos[pos][1] += 1
+        
+        return True
 
     
 
