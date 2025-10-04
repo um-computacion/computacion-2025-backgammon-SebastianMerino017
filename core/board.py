@@ -246,6 +246,16 @@ class Board:
             "bar": self.bar.copy(),
             "off_board": self.off_board.copy()
         }
+    
+    def reset_board(self):
+        self.pos = [None for _ in range(24)]
+        self.bar = {"white": 0, "black": 0}
+        self.off_board = {"white": 0, "black": 0}
+        self.setup_initial_position()
+
+
+if __name__ == "__main__":
+    board = Board()
 
     
 
