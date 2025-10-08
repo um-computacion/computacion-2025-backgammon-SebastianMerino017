@@ -50,3 +50,22 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board_draw[6][2], 'W')
         self.assertEqual(board_draw[6][3], 'W')
         self.assertEqual(board_draw[6][4], '3')
+
+    def test_get_piece_white(self):
+        self.board.pos[0] = ["white", 2]
+        self.assertEqual(self.board.get_piece(0), 'W')
+    
+    def test_get_piece_black(self):
+        self.board.pos[5] = ["black", 3]
+        self.assertEqual(self.board.get_piece(5), 'B')
+    
+    def test_is_valid_position_valid(self):
+        self.assertTrue(self.board.is_valid_position(0))
+        self.assertTrue(self.board.is_valid_position(12))
+        self.assertTrue(self.board.is_valid_position(23))
+    
+    def test_is_valid_position_invalid(self):
+        self.assertFalse(self.board.is_valid_position(-1))
+        self.assertFalse(self.board.is_valid_position(24))
+        self.assertFalse(self.board.is_valid_position(100))
+        self.assertFalse(self.board.is_valid_position("0"))
