@@ -3,16 +3,37 @@ from core.board import Board
 
 
 class TestBoard(unittest.TestCase):
-   def test_draw(self):
-    board = Board()
-    board.pos = [None for _ in range(24)]
-    board.pos[0] = ["white", 3]
-    board.pos[1] = ["white", 8]
+   
+    def setUp(self):
+        self.board = Board()
     
-    board_draw = board.draw()
+    def test_initial_setup(self):
+        board = Board()
+        
+        self.assertEqual(board.__pos__[0], ["white", 2])
+        self.assertEqual(board.__pos__[11], ["white", 5])
+        self.assertEqual(board.__pos__[16], ["white", 3])
+        self.assertEqual(board.__pos__[18], ["white", 5])
+        
+        self.assertEqual(board.__pos__[23], ["black", 2])
+        self.assertEqual(board.__pos__[12], ["black", 5])
+        self.assertEqual(board.__pos__[7], ["black", 3])
+        self.assertEqual(board.__pos__[5], ["black", 5])
+        
+        self.assertEqual(board.__bar__, {"white": 0, "black": 0})
+        self.assertEqual(board.__off_board__, {"white": 0, "black": 0})
     
-    self.assertEqual(len(board_draw), 12)
+
+    def test_draw(self):
+        board = Board()
+        board.pos = [None for _ in range(24)]
+        board.pos[0] = ["white", 3]
+        board.pos[1] = ["white", 8]
     
-    self.assertEqual(board_draw[11][0], 'W')
-    self.assertEqual(board_draw[11][1], 'W')
-    self.assertEqual(board_draw[11][2], 'W')
+        board_draw = board.draw()
+    
+        self.assertEqual(len(board_draw), 12)
+    
+        self.assertEqual(board_draw[11][0], 'W')
+        self.assertEqual(board_draw[11][1], 'W')
+        self.assertEqual(board_draw[11][2], 'W')
