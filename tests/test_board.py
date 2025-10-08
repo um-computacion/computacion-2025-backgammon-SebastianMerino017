@@ -37,3 +37,16 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board_draw[11][0], 'W')
         self.assertEqual(board_draw[11][1], 'W')
         self.assertEqual(board_draw[11][2], 'W')
+
+    def test_draw_more_than_five_pieces(self):
+        board = Board()
+        board.pos = [None for _ in range(24)]
+        board.pos[5] = ["white", 7]
+        
+        board_draw = board.draw()
+        
+        self.assertEqual(board_draw[6][0], 'W')
+        self.assertEqual(board_draw[6][1], 'W')
+        self.assertEqual(board_draw[6][2], 'W')
+        self.assertEqual(board_draw[6][3], 'W')
+        self.assertEqual(board_draw[6][4], '3')
