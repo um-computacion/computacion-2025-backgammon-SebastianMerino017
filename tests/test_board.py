@@ -121,3 +121,73 @@ class TestBoard(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(self.board.pos[0], ["white", 1])
         self.assertEqual(self.board.pos[3], ["white", 2])
+
+    def test_move_piece_capture(self):
+        self.board.__pos__[0] = ["white", 2]
+        self.board.__pos__[3] = ["black", 1]
+        
+        result = self.board.move_piece(0, 3, "white")
+        
+        self.assertTrue(result)
+        self.assertEqual(self.board.__pos__[0], ["white", 1])
+        self.assertEqual(self.board.__pos__[3], ["white", 1])
+        self.assertEqual(self.board.__bar__["black"], 1)
+    
+    def test_move_piece_invalid_from(self):
+        result = self.board.move_piece(25, 3, "white")
+        self.assertFalse(result)
+    
+    def test_move_piece_invalid_to(self):
+        result = self.board.move_piece(0, 25, "white")
+        self.assertFalse(result)
+    
+    def test_move_piece_empty_origin(self):
+        self.board.__pos__[10] = None
+        result = self.board.move_piece(10, 13, "white")
+        self.assertFalse(result)
+    
+    def test_move_piece_wrong_color(self):
+        self.board.__pos__[0] = ["white", 2]
+        result = self.board.move_piece(0, 3, "black")
+        self.assertFalse(result)
+    
+    def test_move_piece_blocked(self):
+        self.board.__pos__[0] = ["white", 2]
+        self.board.__pos__[3] = ["black", 2]
+        
+        result = self.board.move_piece(0, 3, "white")
+        self.assertFalse(result)
+    
+    def test_bear_off_white_valid(self):
+        self.board.__pos__[20] = ["white", 2]
+        initial_off_board = self.board.__off_board__["white"]
+        
+        result = self.board.bear_off(20, "white")
+        
+        self.assertTrue(result)
+        self.assertEqual(self.board.__pos__[20], ["white", 1])
+        self.assertEqual(self.board.__off_board__["white"], initial_off_board + 1)
+    
+    def test_bear_off_black_valid(self):
+        self.board.__pos__[3] = ["black", 2]
+        initial_off_board = self.board.__off_board__["black"]
+        
+        result = self.board.bear_off(3, "black")
+        
+        self.assertTrue(result)
+        self.assertEqual(self.board.__pos__[3], ["black", 1])
+        self.assertEqual(self.board.__off_board__["black"], initial_off_board + 1)
+    
+    def test_bear_off_last_piece(self):
+        self.board.__pos__[20] = ["white", 1]
+        
+        result = self.board.bear_off(20, "white")
+        
+        self.assertTrue(result)
+        self.assertIsNone(self.board.__pos__[20])
+        self.assertEqual(self.board.__off_board__["white"], 1)
+    
+    def test_bear_off_wrong_position_white(self):
+        self.board.__pos__[10] = ["white", 2]
+        result = self.board.bear_off(10, "white")
+        self.assertFalse(result)
