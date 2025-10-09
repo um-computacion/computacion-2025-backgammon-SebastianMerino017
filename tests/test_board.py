@@ -69,3 +69,55 @@ class TestBoard(unittest.TestCase):
         self.assertFalse(self.board.is_valid_position(24))
         self.assertFalse(self.board.is_valid_position(100))
         self.assertFalse(self.board.is_valid_position("0"))
+
+    def test_get_position_info_valid(self):
+        info = self.board.get_position_info(0)
+        self.assertEqual(info, ["white", 2])
+    
+    def test_get_position_info_invalid(self):
+        info = self.board.get_position_info(25)
+        self.assertIsNone(info)
+    
+    def test_get_position_info_empty(self):
+        self.board.pos[10] = None
+        info = self.board.get_position_info(10)
+        self.assertIsNone(info)
+    
+    def test_can_place_piece_empty_position(self):
+        self.board.pos[10] = None
+        self.assertTrue(self.board.can_place_piece(10, "white"))
+    
+    def test_can_place_piece_same_color(self):
+        self.board.pos[0] = ["white", 2]
+        self.assertTrue(self.board.can_place_piece(0, "white"))
+    
+    def test_can_place_piece_one_enemy(self):
+        self.board.pos[10] = ["black", 1]
+        self.assertTrue(self.board.can_place_piece(10, "white"))
+    
+    def test_can_place_piece_blocked(self):
+        self.board.pos[10] = ["black", 2]
+        self.assertFalse(self.board.can_place_piece(10, "white"))
+    
+    def test_can_place_piece_invalid_position(self):
+        self.assertFalse(self.board.can_place_piece(25, "white"))
+    
+    def test_move_piece_simple(self):
+        self.board.pos[0] = ["white", 2]
+        self.board.pos[3] = None
+        
+        result = self.board.move_piece(0, 3, "white")
+        
+        self.assertTrue(result)
+        self.assertEqual(self.board.pos[0], ["white", 1])
+        self.assertEqual(self.board.pos[3], ["white", 1])
+    
+    def test_move_piece_to_same_color(self):
+        self.board.pos[0] = ["white", 2]
+        self.board.pos[3] = ["white", 1]
+        
+        result = self.board.move_piece(0, 3, "white")
+        
+        self.assertTrue(result)
+        self.assertEqual(self.board.pos[0], ["white", 1])
+        self.assertEqual(self.board.pos[3], ["white", 2])
