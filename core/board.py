@@ -233,11 +233,14 @@ class Board:
         count = 0
         
         for pos in self.pos:
-            if pos is not None and pos[0] == color:
-                count += pos[1]
-        
+         if pos is not None and pos[0] == color:
+             count += pos[1]
+
+
         count += self.bar[color]
-        
+
+        count -= self.off_board[color]
+
         return count
     
     def get_state(self):
