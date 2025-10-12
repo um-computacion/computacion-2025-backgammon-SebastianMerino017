@@ -215,3 +215,50 @@ class Game:
         Player.game_pieces[current.color]['on_board'] -= 1
         Player.game_pieces[current.color]['off_board'] += 1
            
+        if current.is_winner():
+            self.__winner__ = current
+        
+        return True
+    
+    def end_turn(self):
+        current = self.get_current_player()
+        
+        if not current.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {current.name}")
+        
+        current.end_turn()
+        
+        if self.__current_player__ == self.__player1__:
+            self.__current_player__ = self.__player2__
+        else:
+            self.__current_player__ = self.__player1__
+        
+        self.__dice__ = Dice()
+        
+        return True
+    
+    def get_winner(self):
+        return self.__winner__
+    
+    def is_game_over(self):
+        return self.__winner__ is not None
+    
+    def get_game_state(self):
+        return {
+            "board": self.__board__.get_state(),
+            "player1": self.__player1__.get_status(),
+            "player2": self.__player2__.get_status(),
+            "current_player": self.__current_player__.name,
+            "dice": {
+                "values": self.__dice__.get_values(),
+                "available": self.__dice__.get_available_values(),
+                "is_double": self.__dice__.is_double()
+            },
+            "winner": self.__winner__.name if self.__winner__ else None,
+            "game_started": self.__game_started__
+        }
+    
+    def __str__(self):
+        state = "Iniciado" if self.__game_started__ else "No iniciado"
+        return f"Backgammon Game - {state} - Turno: {self.__current_player__.name}"
+    
