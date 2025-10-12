@@ -58,3 +58,64 @@ class TestGame(unittest.TestCase):
     def test_roll_dice_not_started(self):
         result = self.game.roll_dice()
         self.assertIsNone(result)
+
+    def test_roll_dice_wrong_turn(self):
+        self.game.start()
+        with self.assertRaises(NotYourTurnError):
+            self.game.__current_player__ = self.game.__player2__
+            Player.current_turn = "white"
+            self.game.roll_dice()
+    
+    @patch('random.randint', side_effect=[4, 4])
+    def test_roll_dice_double(self, mock_randint):
+        self.game.start()
+        result = self.game.roll_dice()
+        self.assertEqual(result, (4, 4))
+        self.assertTrue(self.game.__dice__.is_double())
+    
+    @patch('random.randint', side_effect=[2, 5])
+    def test_get_available_moves(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        available = self.game.get_available_moves()
+        self.assertIn(2, available)
+        self.assertIn(5, available)
+    
+    def test_must_enter_from_bar_false(self):
+        self.assertFalse(self.game.must_enter_from_bar())
+    
+    def test_must_enter_from_bar_true(self):
+        self.game.__board__.__bar__["white"] = 1
+        self.assertTrue(self.game.must_enter_from_bar())
+    
+    def test_has_pieces_in_home_board_white_false(self):
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[10] = ["white", 2]
+        result = self.game.has_pieces_in_home_board("white")
+        self.assertFalse(result)
+    
+    def test_has_pieces_in_home_board_white_true(self):
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[20] = ["white", 2]
+        self.game.__board__.__pos__[21] = ["white", 3]
+        self.game.__board__.__bar__["white"] = 0
+        result = self.game.has_pieces_in_home_board("white")
+        self.assertTrue(result)
+    
+    def test_has_pieces_in_home_board_black_true(self):
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[3] = ["black", 2]
+        self.game.__board__.__pos__[4] = ["black", 3]
+        self.game.__board__.__bar__["black"] = 0
+        result = self.game.has_pieces_in_home_board("black")
+        self.assertTrue(result)
+    
+    def test_validate_move_distance_white_valid(self):
+        self.game.__dice__.__values__ = [3, 5]
+        result = self.game.validate_move_distance(10, 13, "white")
+        self.assertTrue(result)
+    
+    def test_validate_move_distance_white_invalid(self):
+        self.game.__dice__.__values__ = [3, 5]
+        result = self.game.validate_move_distance(10, 12, "white")
+        self.assertFalse(result)
