@@ -128,4 +128,101 @@ class BackgammonCLI:
         except Exception as e:
             print(f"Error inesperado: {e}")
     
- 
+    def handle_enter_from_bar(self):
+        try:
+            print("\nENTRAR FICHA DESDE LA BARRA")
+            print("-" * 30)
+            
+            current_player = self.__game__.get_current_player()
+            bar_count = self.__game__.get_board().__bar__[current_player.color]
+            
+            print(f"Tienes {bar_count} ficha(s) en la barra")
+            
+            if current_player.color == "white":
+                print("Zona de entrada valida: posiciones 19-24")
+                valid_range = "19-24"
+                min_pos, max_pos = 19, 24
+            else:
+                print("Zona de entrada valida: posiciones 1-6")
+                valid_range = "1-6"
+                min_pos, max_pos = 1, 6
+            
+            to_pos = input(f"Posicion de destino ({valid_range}): ").strip()
+            
+            if not to_pos.isdigit():
+                print("Error: La posicion debe ser un numero")
+                return
+            
+            to_pos_num = int(to_pos)
+            if not (min_pos <= to_pos_num <= max_pos):
+                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
+                return
+            
+            to_pos = to_pos_num - 1
+            
+            success = self.__game__.enter_from_bar(to_pos)
+            if success:
+                print("✓ Ficha entro exitosamente desde la barra")
+                
+        except NoPiecesInBarError as e:
+            print(f"Error: {e}")
+        except InvalidMoveError as e:
+            print(f"Movimiento invalido: {e}")
+        except NotYourTurnError as e:
+            print(f"Error de turno: {e}")
+        except ValueError:
+            print("Error: Ingresa un numero valido")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def handle_bear_off(self):
+        try:
+            print("\nSACAR FICHA DEL TABLERO")
+            print("-" * 25)
+            
+            current_player = self.__game__.get_current_player()
+            
+            if current_player.color == "white":
+                print("Puedes sacar desde: posiciones 19-24")
+                valid_range = "19-24"
+                min_pos, max_pos = 19, 24
+            else:
+                print("Puedes sacar desde: posiciones 1-6")
+                valid_range = "1-6"
+                min_pos, max_pos = 1, 6
+            
+            from_pos = input(f"Posicion de la ficha a sacar ({valid_range}): ").strip()
+            
+            if not from_pos.isdigit():
+                print("Error: La posicion debe ser un numero")
+                return None
+            
+            from_pos_num = int(from_pos)
+            if not (min_pos <= from_pos_num <= max_pos):
+                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
+                return None
+            
+            from_pos = from_pos_num - 1
+            
+            success = self.__game__.bear_off(from_pos)
+            if success:
+                print("✓ Ficha sacada exitosamente del tablero")
+                
+                if self.__game__.is_game_over():
+                    winner = self.__game__.get_winner()
+                    print(f"\n{'='*50}")
+                    print(f"¡¡¡ {winner.name.upper()} HA GANADO EL JUEGO !!!")
+                    print(f"{'='*50}")
+                    return "game_over"
+                    
+        except InvalidMoveError as e:
+            print(f"Movimiento invalido: {e}")
+        except NotYourTurnError as e:
+            print(f"Error de turno: {e}")
+        except ValueError:
+            print("Error: Ingresa un numero valido")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+        
+        return None
+    
