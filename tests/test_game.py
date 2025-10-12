@@ -275,3 +275,106 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(InvalidMoveError):
             self.game.bear_off(10)
     
+    @patch('random.randint', side_effect=[3, 5])
+    def test_end_turn_valid(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        initial_player = self.game.get_current_player()
+        result = self.game.end_turn()
+        
+        self.assertTrue(result)
+        self.assertNotEqual(self.game.get_current_player(), initial_player)
+    
+    def test_end_turn_not_your_turn(self):
+        self.game.start()
+        self.game.__current_player__ = self.game.__player2__
+        Player.current_turn = "white"
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.end_turn()
+    
+    def test_get_winner_none(self):
+        self.assertIsNone(self.game.get_winner())
+    
+    def test_get_winner_exists(self):
+        self.game.__winner__ = self.game.__player1__
+        winner = self.game.get_winner()
+        self.assertEqual(winner.name, "Juan")
+    
+    def test_is_game_over_false(self):
+        self.assertFalse(self.game.is_game_over())
+    
+    def test_is_game_over_true(self):
+        self.game.__winner__ = self.game.__player1__
+        self.assertTrue(self.game.is_game_over())
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_get_game_state(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        state = self.game.get_game_state()
+        
+        self.assertIn("board", state)
+        self.assertIn("player1", state)
+        self.assertIn("player2", state)
+        self.assertIn("current_player", state)
+        self.assertIn("dice", state)
+        self.assertIn("winner", state)
+        self.assertIn("game_started", state)
+        
+        self.assertEqual(state["current_player"], "Juan")
+        self.assertTrue(state["game_started"])
+        self.assertIsNone(state["winner"])
+    
+    def test_str_not_started(self):
+        result = str(self.game)
+        self.assertIn("No iniciado", result)
+        self.assertIn("Juan", result)
+    
+    def test_str_started(self):
+        self.game.start()
+        result = str(self.game)
+        self.assertIn("Iniciado", result)
+        self.assertIn("Juan", result)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_complete_turn_flow(self, mock_randint):
+        self.game.start()
+        
+        self.assertEqual(self.game.get_current_player().name, "Juan")
+        
+        dice = self.game.roll_dice()
+        self.assertEqual(dice, (3, 5))
+        
+        available = self.game.get_available_moves()
+        self.assertEqual(len(available), 2)
+        
+        self.game.__board__.__pos__[0] = ["white", 2]
+        self.game.__board__.__pos__[3] = None
+        self.game.move_piece(0, 3)
+        
+        self.game.end_turn()
+        self.assertEqual(self.game.get_current_player().name, "María")
+    
+    @patch('random.randint', side_effect=[6, 6, 1, 2])
+    def test_bear_off_win_condition(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[23] = ["white", 1]
+        self.game.__board__.__bar__["white"] = 0
+        Player.game_pieces["white"]["on_board"] = 1
+        Player.game_pieces["white"]["off_board"] = 14
+        
+        self.game.bear_off(23)
+        
+        self.assertTrue(self.game.is_game_over())
+        self.assertIsNotNone(self.game.get_winner())
+        self.assertEqual(self.game.get_winner().name, "Juan")
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
