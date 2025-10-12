@@ -144,4 +144,74 @@ class Game:
         else:
             entry_zone = range(0, 6)
             bar_position = -1
+
+        if to_pos not in entry_zone:
+            raise InvalidMoveError(f"Debes entrar en tu zona de entrada")
         
+        if current.color == "white":
+            distance = to_pos - bar_position
+        else:
+            distance = bar_position - to_pos
+        
+        distance = abs(distance)
+        
+        if distance not in self.__dice__.get_available_values():
+            raise InvalidMoveError("La distancia no corresponde a los dados disponibles")
+        
+        success = self.__board__.enter_from_bar(to_pos, current.color)
+        
+        if not success:
+            raise InvalidMoveError("No se puede entrar en esa posición")
+        
+        self.__dice__.use_value(distance)
+        
+        return True
+    
+    def bear_off(self, from_pos):
+        current = self.get_current_player()
+        
+        if not current.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {current.name}")
+        
+        if self.must_enter_from_bar():
+            raise InvalidMoveError("Debes entrar fichas desde la barra primero")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("No hay dados disponibles")
+        
+        if not self.has_pieces_in_home_board(current.color):
+            raise InvalidMoveError("No todas tus fichas están en el home board")
+        
+        if current.color == "white":
+            if not (18 <= from_pos <= 23):
+                raise InvalidMoveError("Solo puedes sacar fichas desde tu home board")
+            distance = 24 - from_pos
+        else:
+            if not (0 <= from_pos <= 5):
+                raise InvalidMoveError("Solo puedes sacar fichas desde tu home board")
+            distance = from_pos + 1
+        
+        available = self.__dice__.get_available_values()
+        
+        can_bear_off_exact = distance in available
+        can_bear_off_higher = any(d > distance for d in available)
+        
+        if not (can_bear_off_exact or can_bear_off_higher):
+            raise InvalidMoveError("No tienes un dado válido para sacar esta ficha")
+        
+        success = self.__board__.bear_off(from_pos, current.color)
+        
+        if not success:
+            raise InvalidMoveError("No se puede sacar la ficha")
+        
+        if can_bear_off_exact:
+            self.__dice__.use_value(distance)
+        else:
+            for d in sorted(available, reverse=True):
+                if d > distance:
+                    self.__dice__.use_value(d)
+                    break
+        
+        Player.game_pieces[current.color]['on_board'] -= 1
+        Player.game_pieces[current.color]['off_board'] += 1
+           
