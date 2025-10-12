@@ -226,3 +226,142 @@ class BackgammonCLI:
         
         return None
     
+    def handle_end_turn(self):
+        try:
+            dice = self.__game__.get_dice()
+            available = dice.get_available_values()
+            
+            if available:
+                confirm = input(f"Aun tienes dados disponibles: {available}. ¿Terminar turno de todos modos? (s/n): ").strip().lower()
+                if confirm != 's':
+                    print("Turno no terminado")
+                    return
+            
+            success = self.__game__.end_turn()
+            if success:
+                print("✓ Turno terminado. Pasando al siguiente jugador...")
+        except NotYourTurnError as e:
+            print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def show_help(self):
+        print("\nAYUDA - COMANDOS DISPONIBLES")
+        print("=" * 40)
+        print("r  - Tirar dados")
+        print("m  - Mover ficha")
+        print("b  - Entrar ficha desde la barra")
+        print("s  - Sacar ficha del tablero (bear off)")
+        print("e  - Terminar turno")
+        print("h  - Mostrar esta ayuda")
+        print("q  - Salir del juego")
+        print("c  - Limpiar pantalla")
+        print("=" * 40)
+        print()
+    
+    def show_game_status(self):
+        print("\nESTADO DEL JUEGO")
+        print("-" * 30)
+        state = self.__game__.get_game_state()
+        print(f"Jugador 1: {state['player1']['name']} ({state['player1']['color']})")
+        print(f"  - Fichas en tablero: {state['player1']['pieces']['on_board']}")
+        print(f"  - Fichas fuera: {state['player1']['pieces']['off_board']}")
+        print(f"Jugador 2: {state['player2']['name']} ({state['player2']['color']})")
+        print(f"  - Fichas en tablero: {state['player2']['pieces']['on_board']}")
+        print(f"  - Fichas fuera: {state['player2']['pieces']['off_board']}")
+        print()
+    
+    def main_menu(self):
+        while True:
+            self.clear_screen()
+            self.print_header()
+            
+            if self.__game__.is_game_over():
+                winner = self.__game__.get_winner()
+                print("=" * 60)
+                print(" " * 20 + "JUEGO TERMINADO!")
+                print(f" " * 15 + f"¡{winner.name} ES EL GANADOR!")
+                print("=" * 60)
+                print()
+                
+                play_again = input("¿Jugar otra vez? (s/n): ").strip().lower()
+                if play_again == 's':
+                    self.setup_game()
+                    continue
+                else:
+                    print("\n¡Gracias por jugar!")
+                    break
+            
+            self.display_game_state()
+            self.show_available_moves()
+            
+            print("\nACCIONES DISPONIBLES:")
+            print("r - Tirar dados | m - Mover | b - Entrar | s - Sacar | e - Terminar turno")
+            print("h - Ayuda | c - Limpiar | q - Salir")
+            print()
+            
+            choice = input("Selecciona una opcion: ").strip().lower()
+            
+            if choice == 'q':
+                confirm = input("¿Seguro que quieres salir? (s/n): ").strip().lower()
+                if confirm == 's':
+                    print("\n¡Gracias por jugar!")
+                    break
+            elif choice == 'h':
+                self.show_help()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'c':
+                continue
+            elif choice == 'r':
+                self.handle_dice_roll()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'm':
+                self.handle_move_piece()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'b':
+                self.handle_enter_from_bar()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 's':
+                result = self.handle_bear_off()
+                if result == "game_over":
+                    input("\nPresiona Enter para continuar...")
+                    continue
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'e':
+                self.handle_end_turn()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'i':
+                self.show_game_status()
+                input("\nPresiona Enter para continuar...")
+            else:
+                print("Opcion no valida. Presiona 'h' para ver la ayuda.")
+                input("\nPresiona Enter para continuar...")
+    
+    def run(self):
+        try:
+            self.__running__ = True
+            print("=" * 60)
+            print(" " * 15 + "Bienvenido a Backgammon CLI!")
+            print("=" * 60)
+            print()
+            
+            self.setup_game()
+            self.main_menu()
+            
+        except KeyboardInterrupt:
+            print("\n\n¡Juego interrumpido! Hasta luego.")
+        except Exception as e:
+            print(f"\nError critico: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.__running__ = False
+
+
+def main():
+    cli = BackgammonCLI()
+    cli.run()
+
+
+if __name__ == "__main__":
+    main()
