@@ -119,3 +119,105 @@ class TestGame(unittest.TestCase):
         self.game.__dice__.__values__ = [3, 5]
         result = self.game.validate_move_distance(10, 12, "white")
         self.assertFalse(result)
+
+    def test_validate_move_distance_black_valid(self):
+        self.game.__dice__.__values__ = [3, 5]
+        result = self.game.validate_move_distance(13, 10, "black")
+        self.assertTrue(result)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_move_piece_valid(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__[0] = ["white", 2]
+        self.game.__board__.__pos__[3] = None
+        
+        result = self.game.move_piece(0, 3)
+        self.assertTrue(result)
+        self.assertEqual(self.game.__board__.__pos__[3], ["white", 1])
+    
+    def test_move_piece_not_your_turn(self):
+        self.game.start()
+        self.game.__current_player__ = self.game.__player2__
+        Player.current_turn = "white"
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.move_piece(0, 3)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_move_piece_no_dice_available(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        self.game.__dice__.use_value(3)
+        self.game.__dice__.use_value(5)
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.move_piece(0, 3)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_move_piece_must_enter_from_bar(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        self.game.__board__.__bar__["white"] = 1
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.move_piece(0, 3)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_move_piece_invalid_position(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.move_piece(0, 25)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_move_piece_wrong_distance(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__[0] = ["white", 2]
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.move_piece(0, 2)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_enter_from_bar_valid_white(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__bar__["white"] = 1
+        self.game.__board__.__pos__[21] = None
+        
+        result = self.game.enter_from_bar(21)
+        self.assertTrue(result)
+        self.assertEqual(self.game.__board__.__bar__["white"], 0)
+        self.assertEqual(self.game.__board__.__pos__[21], ["white", 1])
+    
+    def test_enter_from_bar_no_pieces(self):
+        self.game.start()
+        
+        with self.assertRaises(NoPiecesInBarError):
+            self.game.enter_from_bar(20)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_enter_from_bar_not_your_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        self.game.__board__.__bar__["white"] = 1
+        self.game.__current_player__ = self.game.__player2__
+        Player.current_turn = "white"
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.enter_from_bar(20)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_enter_from_bar_wrong_zone(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        self.game.__board__.__bar__["white"] = 1
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.enter_from_bar(10)
+    
