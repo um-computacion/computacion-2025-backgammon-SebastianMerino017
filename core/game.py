@@ -64,3 +64,64 @@ class Game:
     def can_bear_off(self):
         current = self.get_current_player()
         return self.__board__.has_pieces_in_home_board(current.color)
+    
+    def has_pieces_in_home_board(self, color):
+        if color == "white":
+            home_range = range(18, 24)
+        else:
+            home_range = range(0, 6)
+        
+        for pos in home_range:
+            if self.__board__.__pos__[pos] is not None:
+                if self.__board__.__pos__[pos][0] == color:
+                    return True
+        
+        if self.__board__.__bar__[color] == 0:
+            for pos in range(24):
+                if pos not in home_range:
+                    if self.__board__.__pos__[pos] is not None:
+                        if self.__board__.__pos__[pos][0] == color:
+                            return False
+            return True
+        return False
+    
+    def validate_move_distance(self, from_pos, to_pos, color):
+        if color == "white":
+            distance = to_pos - from_pos
+        else:
+            distance = from_pos - to_pos
+        
+        available = self.__dice__.get_available_values()
+        return distance in available
+    
+    def move_piece(self, from_pos, to_pos):
+        current = self.get_current_player()
+        
+        if not current.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {current.name}")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("No hay dados disponibles para mover")
+        
+        if self.must_enter_from_bar():
+            raise InvalidMoveError("Debes entrar fichas desde la barra primero")
+        
+        if not self.__board__.is_valid_position(from_pos) or not self.__board__.is_valid_position(to_pos):
+            raise InvalidMoveError("Posición inválida")
+        
+        if not self.validate_move_distance(from_pos, to_pos, current.color):
+            raise InvalidMoveError("La distancia no corresponde a los dados disponibles")
+        
+        if current.color == "white":
+            distance = to_pos - from_pos
+        else:
+            distance = from_pos - to_pos
+        
+        success = self.__board__.move_piece(from_pos, to_pos, current.color)
+        
+        if not success:
+            raise InvalidMoveError("Movimiento inválido")
+        
+        self.__dice__.use_value(distance)
+        
+        return True
