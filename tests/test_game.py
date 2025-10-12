@@ -221,3 +221,57 @@ class TestGame(unittest.TestCase):
         with self.assertRaises(InvalidMoveError):
             self.game.enter_from_bar(10)
     
+    @patch('random.randint', side_effect=[3, 5])
+    def test_bear_off_valid(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[20] = ["white", 2]
+        self.game.__board__.__pos__[21] = ["white", 3]
+        self.game.__board__.__bar__["white"] = 0
+        Player.game_pieces["white"]["on_board"] = 5
+        
+        result = self.game.bear_off(21)
+        self.assertTrue(result)
+        self.assertEqual(self.game.__board__.__pos__[21], ["white", 2])
+        self.assertEqual(Player.game_pieces["white"]["off_board"], 1)
+    
+    def test_bear_off_not_your_turn(self):
+        self.game.start()
+        self.game.__current_player__ = self.game.__player2__
+        Player.current_turn = "white"
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.bear_off(20)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_bear_off_must_enter_from_bar(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        self.game.__board__.__bar__["white"] = 1
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.bear_off(20)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_bear_off_not_all_in_home(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__[10] = ["white", 2]
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.bear_off(20)
+    
+    @patch('random.randint', side_effect=[3, 5])
+    def test_bear_off_wrong_position(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        self.game.__board__.__pos__ = [None for _ in range(24)]
+        self.game.__board__.__pos__[20] = ["white", 2]
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.bear_off(10)
+    
