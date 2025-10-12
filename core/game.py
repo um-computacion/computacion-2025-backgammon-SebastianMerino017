@@ -125,3 +125,23 @@ class Game:
         self.__dice__.use_value(distance)
         
         return True
+    
+    def enter_from_bar(self, to_pos):
+        current = self.get_current_player()
+        
+        if not current.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {current.name}")
+        
+        if not self.must_enter_from_bar():
+            raise NoPiecesInBarError("No tienes fichas en la barra")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("No hay dados disponibles")
+        
+        if current.color == "white":
+            entry_zone = range(18, 24)
+            bar_position = 24
+        else:
+            entry_zone = range(0, 6)
+            bar_position = -1
+        
