@@ -1,0 +1,367 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from core.game import Game, InvalidMoveError, NotYourTurnError, NoPiecesInBarError
+from core.board import Board
+from core.dice import Dice
+from core.player import Player
+
+
+class BackgammonCLI:
+    def __init__(self):
+        self.__game__ = None
+        self.__running__ = False
+    
+    def clear_screen(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+    
+    def print_header(self):
+        print("=" * 60)
+        print("           BACKGAMMON - JUEGO DE TABLERO")
+        print("=" * 60)
+        print()
+    
+    def setup_game(self):
+        self.clear_screen()
+        self.print_header()
+        
+        print("CONFIGURACION DEL JUEGO")
+        print("-" * 30)
+        
+        player1_name = input("Nombre del Jugador 1 (Blanco): ").strip()
+        player2_name = input("Nombre del Jugador 2 (Negro): ").strip()
+        
+        if not player1_name:
+            player1_name = "Jugador 1"
+        if not player2_name:
+            player2_name = "Jugador 2"
+        
+        self.__game__ = Game(player1_name, player2_name)
+        self.__game__.start()
+        
+        print(f"\n¡Juego creado! {player1_name} (Blanco) vs {player2_name} (Negro)")
+        input("\nPresiona Enter para comenzar...")
+    
+    def display_game_state(self):
+        current_player = self.__game__.get_current_player()
+        dice = self.__game__.get_dice()
+        board = self.__game__.get_board()
+        
+        print(f"Turno actual: {current_player.name} ({current_player.color})")
+        print(f"Dados: {dice}")
+        
+        pieces_info = Player.game_pieces
+        print(f"Fichas en tablero - Blanco: {pieces_info['white']['on_board']}, Negro: {pieces_info['black']['on_board']}")
+        print(f"Fichas fuera - Blanco: {pieces_info['white']['off_board']}, Negro: {pieces_info['black']['off_board']}")
+        
+        print()
+        board.display_board_console()
+        print()
+    
+    def show_available_moves(self):
+        dice = self.__game__.get_dice()
+        available_values = dice.get_available_values()
+        
+        if available_values:
+            print(f"Dados disponibles: {available_values}")
+        else:
+            print("No hay dados disponibles - termina tu turno")
+        
+        if self.__game__.must_enter_from_bar():
+            current_player = self.__game__.get_current_player()
+            bar_count = self.__game__.get_board().__bar__[current_player.color]
+            print(f"ATENCION: Tienes {bar_count} ficha(s) en la barra que deben entrar primero")
+        
+        if self.__game__.can_bear_off():
+            print("Puedes comenzar a sacar fichas del tablero")
+    
+    def handle_dice_roll(self):
+        try:
+            dice_result = self.__game__.roll_dice()
+            if dice_result:
+                print(f"\n{self.__game__.get_current_player().name} tiro: {dice_result}")
+                if self.__game__.get_dice().is_double():
+                    print("¡DOBLE! Tienes 4 movimientos disponibles")
+            else:
+                print("Error al tirar los dados")
+        except NotYourTurnError as e:
+            print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def handle_move_piece(self):
+        try:
+            print("\nMOVIMIENTO DE FICHA")
+            print("-" * 20)
+            
+            from_pos = input("Posicion de origen (1-24): ").strip()
+            to_pos = input("Posicion de destino (1-24): ").strip()
+            
+            if not from_pos.isdigit() or not to_pos.isdigit():
+                print("Error: Las posiciones deben ser numeros")
+                return
+            
+            from_pos = int(from_pos) - 1
+            to_pos = int(to_pos) - 1
+            
+            if not (0 <= from_pos <= 23 and 0 <= to_pos <= 23):
+                print("Error: Las posiciones deben estar entre 1 y 24")
+                return
+            
+            success = self.__game__.move_piece(from_pos, to_pos)
+            if success:
+                print("✓ Movimiento realizado exitosamente")
+                
+                board = self.__game__.get_board()
+                enemy_color = "black" if self.__game__.get_current_player().color == "white" else "white"
+                if board.__bar__[enemy_color] > 0:
+                    print("¡Capturaste una ficha enemiga!")
+                    
+        except InvalidMoveError as e:
+            print(f"Movimiento invalido: {e}")
+        except NotYourTurnError as e:
+            print(f"Error de turno: {e}")
+        except ValueError:
+            print("Error: Ingresa numeros validos")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def handle_enter_from_bar(self):
+        try:
+            print("\nENTRAR FICHA DESDE LA BARRA")
+            print("-" * 30)
+            
+            current_player = self.__game__.get_current_player()
+            bar_count = self.__game__.get_board().__bar__[current_player.color]
+            
+            print(f"Tienes {bar_count} ficha(s) en la barra")
+            
+            if current_player.color == "white":
+                print("Zona de entrada valida: posiciones 19-24")
+                valid_range = "19-24"
+                min_pos, max_pos = 19, 24
+            else:
+                print("Zona de entrada valida: posiciones 1-6")
+                valid_range = "1-6"
+                min_pos, max_pos = 1, 6
+            
+            to_pos = input(f"Posicion de destino ({valid_range}): ").strip()
+            
+            if not to_pos.isdigit():
+                print("Error: La posicion debe ser un numero")
+                return
+            
+            to_pos_num = int(to_pos)
+            if not (min_pos <= to_pos_num <= max_pos):
+                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
+                return
+            
+            to_pos = to_pos_num - 1
+            
+            success = self.__game__.enter_from_bar(to_pos)
+            if success:
+                print("✓ Ficha entro exitosamente desde la barra")
+                
+        except NoPiecesInBarError as e:
+            print(f"Error: {e}")
+        except InvalidMoveError as e:
+            print(f"Movimiento invalido: {e}")
+        except NotYourTurnError as e:
+            print(f"Error de turno: {e}")
+        except ValueError:
+            print("Error: Ingresa un numero valido")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def handle_bear_off(self):
+        try:
+            print("\nSACAR FICHA DEL TABLERO")
+            print("-" * 25)
+            
+            current_player = self.__game__.get_current_player()
+            
+            if current_player.color == "white":
+                print("Puedes sacar desde: posiciones 19-24")
+                valid_range = "19-24"
+                min_pos, max_pos = 19, 24
+            else:
+                print("Puedes sacar desde: posiciones 1-6")
+                valid_range = "1-6"
+                min_pos, max_pos = 1, 6
+            
+            from_pos = input(f"Posicion de la ficha a sacar ({valid_range}): ").strip()
+            
+            if not from_pos.isdigit():
+                print("Error: La posicion debe ser un numero")
+                return None
+            
+            from_pos_num = int(from_pos)
+            if not (min_pos <= from_pos_num <= max_pos):
+                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
+                return None
+            
+            from_pos = from_pos_num - 1
+            
+            success = self.__game__.bear_off(from_pos)
+            if success:
+                print("✓ Ficha sacada exitosamente del tablero")
+                
+                if self.__game__.is_game_over():
+                    winner = self.__game__.get_winner()
+                    print(f"\n{'='*50}")
+                    print(f"¡¡¡ {winner.name.upper()} HA GANADO EL JUEGO !!!")
+                    print(f"{'='*50}")
+                    return "game_over"
+                    
+        except InvalidMoveError as e:
+            print(f"Movimiento invalido: {e}")
+        except NotYourTurnError as e:
+            print(f"Error de turno: {e}")
+        except ValueError:
+            print("Error: Ingresa un numero valido")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+        
+        return None
+    
+    def handle_end_turn(self):
+        try:
+            dice = self.__game__.get_dice()
+            available = dice.get_available_values()
+            
+            if available:
+                confirm = input(f"Aun tienes dados disponibles: {available}. ¿Terminar turno de todos modos? (s/n): ").strip().lower()
+                if confirm != 's':
+                    print("Turno no terminado")
+                    return
+            
+            success = self.__game__.end_turn()
+            if success:
+                print("✓ Turno terminado. Pasando al siguiente jugador...")
+        except NotYourTurnError as e:
+            print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+    
+    def show_help(self):
+        print("\nAYUDA - COMANDOS DISPONIBLES")
+        print("=" * 40)
+        print("r  - Tirar dados")
+        print("m  - Mover ficha")
+        print("b  - Entrar ficha desde la barra")
+        print("s  - Sacar ficha del tablero (bear off)")
+        print("e  - Terminar turno")
+        print("h  - Mostrar esta ayuda")
+        print("q  - Salir del juego")
+        print("c  - Limpiar pantalla")
+        print("=" * 40)
+        print()
+    
+    def show_game_status(self):
+        print("\nESTADO DEL JUEGO")
+        print("-" * 30)
+        state = self.__game__.get_game_state()
+        print(f"Jugador 1: {state['player1']['name']} ({state['player1']['color']})")
+        print(f"  - Fichas en tablero: {state['player1']['pieces']['on_board']}")
+        print(f"  - Fichas fuera: {state['player1']['pieces']['off_board']}")
+        print(f"Jugador 2: {state['player2']['name']} ({state['player2']['color']})")
+        print(f"  - Fichas en tablero: {state['player2']['pieces']['on_board']}")
+        print(f"  - Fichas fuera: {state['player2']['pieces']['off_board']}")
+        print()
+    
+    def main_menu(self):
+        while True:
+            self.clear_screen()
+            self.print_header()
+            
+            if self.__game__.is_game_over():
+                winner = self.__game__.get_winner()
+                print("=" * 60)
+                print(" " * 20 + "JUEGO TERMINADO!")
+                print(f" " * 15 + f"¡{winner.name} ES EL GANADOR!")
+                print("=" * 60)
+                print()
+                
+                play_again = input("¿Jugar otra vez? (s/n): ").strip().lower()
+                if play_again == 's':
+                    self.setup_game()
+                    continue
+                else:
+                    print("\n¡Gracias por jugar!")
+                    break
+            
+            self.display_game_state()
+            self.show_available_moves()
+            
+            print("\nACCIONES DISPONIBLES:")
+            print("r - Tirar dados | m - Mover | b - Entrar | s - Sacar | e - Terminar turno")
+            print("h - Ayuda | c - Limpiar | q - Salir")
+            print()
+            
+            choice = input("Selecciona una opcion: ").strip().lower()
+            
+            if choice == 'q':
+                confirm = input("¿Seguro que quieres salir? (s/n): ").strip().lower()
+                if confirm == 's':
+                    print("\n¡Gracias por jugar!")
+                    break
+            elif choice == 'h':
+                self.show_help()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'c':
+                continue
+            elif choice == 'r':
+                self.handle_dice_roll()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'm':
+                self.handle_move_piece()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'b':
+                self.handle_enter_from_bar()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 's':
+                result = self.handle_bear_off()
+                if result == "game_over":
+                    input("\nPresiona Enter para continuar...")
+                    continue
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'e':
+                self.handle_end_turn()
+                input("\nPresiona Enter para continuar...")
+            elif choice == 'i':
+                self.show_game_status()
+                input("\nPresiona Enter para continuar...")
+            else:
+                print("Opcion no valida. Presiona 'h' para ver la ayuda.")
+                input("\nPresiona Enter para continuar...")
+    
+    def run(self):
+        try:
+            self.__running__ = True
+            print("=" * 60)
+            print(" " * 15 + "Bienvenido a Backgammon CLI!")
+            print("=" * 60)
+            print()
+            
+            self.setup_game()
+            self.main_menu()
+            
+        except KeyboardInterrupt:
+            print("\n\n¡Juego interrumpido! Hasta luego.")
+        except Exception as e:
+            print(f"\nError critico: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.__running__ = False
+
+
+def main():
+    cli = BackgammonCLI()
+    cli.run()
+
+
+if __name__ == "__main__":
+    main()
