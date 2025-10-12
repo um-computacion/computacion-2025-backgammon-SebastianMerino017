@@ -59,4 +59,20 @@ class BackgammonCLI:
         print()
         board.display_board_console()
         print()
+
+    def show_available_moves(self):
+        dice = self.game.get_dice()
+        available_values = dice.get_available_values()
+        
+        if available_values:
+            print(f"Dados disponibles: {available_values}")
+        else:
+            print("No hay dados disponibles - termina tu turno")
+        
+        if self.game.must_enter_from_bar():
+            current_player = self.game.get_current_player()
+            print(f"ATENCION: Tienes {self.game.get_board().__bar__[current_player.color]} ficha(s) en la barra que deben entrar primero")
+        
+        if self.game.can_bear_off():
+            print("Puedes comenzar a sacar fichas")
         
