@@ -13,5 +13,21 @@ class BackgammonCLI:
         self.running = False
     
     def clear_screen(self):
-        """Limpiar la pantalla"""
         os.system('cls' if os.name == 'nt' else 'clear')
+
+    def print_header(self):
+        print("=" * 60)
+        print("           BACKGAMMON - JUEGO DE TABLERO")
+        print("=" * 60)
+        print()
+    
+    def setup_game(self):
+        self.clear_screen()
+        self.print_header()
+        
+        print("CONFIGURACION DEL JUEGO")
+        print("-" * 30)
+        
+        player1_name = input("Nombre del Jugador 1 (Blanco): ").strip()
+        player2_name = input("Nombre del Jugador 2 (Negro): ").strip()
+        
