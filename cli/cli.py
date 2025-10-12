@@ -75,4 +75,19 @@ class BackgammonCLI:
         
         if self.game.can_bear_off():
             print("Puedes comenzar a sacar fichas")
+
+    def handle_dice_roll(self):
+        
+        try:
+            dice_result = self.game.roll_dice()
+            if dice_result:
+                print(f"{self.game.get_current_player().name} tiro: {dice_result}")
+                if self.game.get_dice().is_double():
+                    print("DOBLE! Tienes 4 movimientos disponibles")
+            else:
+                print("Error al tirar los dados")
+        except NotYourTurnError as e:
+            print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
         
