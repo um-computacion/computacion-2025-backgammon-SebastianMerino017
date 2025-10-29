@@ -375,6 +375,11 @@ class TestGame(unittest.TestCase):
         self.assertIsNotNone(self.game.get_winner())
         self.assertEqual(self.game.get_winner().name, "Juan")
 
+    def test_move_piece_before_rolling_dice(self):
+        self.game.start()
+        with self.assertRaises(InvalidMoveError) as context:
+            self.game.move_piece(0, 3)
+        self.assertIn("Debes lanzar el dado", str(context.exception))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
