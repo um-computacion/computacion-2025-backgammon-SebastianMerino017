@@ -1,264 +1,178 @@
 from core.board import Board
-from core.player import Player
 from core.dice import Dice
-
+from core.player import Player
 
 class InvalidMoveError(Exception):
     pass
 
-
 class NotYourTurnError(Exception):
     pass
-
 
 class NoPiecesInBarError(Exception):
     pass
 
-
 class Game:
-    def __init__(self, player1_name, player2_name):
-        Player.reset_game()
-        
-        self.__board__ = Board()
+    def __init__(self, player1_name: str, player2_name: str):
         self.__player1__ = Player(player1_name, "white")
         self.__player2__ = Player(player2_name, "black")
+        self.__board__ = Board()
         self.__dice__ = Dice()
         self.__current_player__ = self.__player1__
-        self.__winner__ = None
         self.__game_started__ = False
-    
+        self.__winner__ = None
+
     def start(self):
         self.__game_started__ = True
+        if hasattr(self.__dice__, 'reset'):
+            self.__dice__.reset()
+        self.__current_player__ = self.__player1__
         return True
-    
-    def get_current_player(self):
-        return self.__current_player__
-    
+
     def get_board(self):
         return self.__board__
+
+    def get_current_player(self):
+        return self.__current_player__
     
     def get_dice(self):
         return self.__dice__
     
     def get_players(self):
-        return (self.__player1__, self.__player2__)
-    
-    def roll_dice(self):
-        if not self.__game_started__:
-            return None
-        
-        current = self.get_current_player()
-        if not current.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {current.name}")
-        
-        result = self.__dice__.roll()
-        return result
-    
-    def get_available_moves(self):
-        return self.__dice__.get_available_values()
-    
-    def must_enter_from_bar(self):
-        current = self.get_current_player()
-        return self.__board__.__bar__[current.color] > 0
-    
-    def can_bear_off(self):
-        current = self.get_current_player()
-        return self.__board__.has_pieces_in_home_board(current.color)
-    
-    def has_pieces_in_home_board(self, color):
-        if color == "white":
-            home_range = range(18, 24)
-        else:
-            home_range = range(0, 6)
-        
-        for pos in home_range:
-            if self.__board__.__pos__[pos] is not None:
-                if self.__board__.__pos__[pos][0] == color:
-                    return True
-        
-        if self.__board__.__bar__[color] == 0:
-            for pos in range(24):
-                if pos not in home_range:
-                    if self.__board__.__pos__[pos] is not None:
-                        if self.__board__.__pos__[pos][0] == color:
-                            return False
-            return True
-        return False
-    
-    def validate_move_distance(self, from_pos, to_pos, color):
-        if color == "white":
-            distance = to_pos - from_pos
-        else:
-            distance = from_pos - to_pos
-        
-        available = self.__dice__.get_available_values()
-        return distance in available
-    
-    def move_piece(self, from_pos, to_pos):
-        current = self.get_current_player()
-        
-        if not current.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {current.name}")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("No hay dados disponibles para mover")
-        
-        if self.must_enter_from_bar():
-            raise InvalidMoveError("Debes entrar fichas desde la barra primero")
-        
-        if not self.__board__.is_valid_position(from_pos) or not self.__board__.is_valid_position(to_pos):
-            raise InvalidMoveError("Posición inválida")
-        
-        if not self.validate_move_distance(from_pos, to_pos, current.color):
-            raise InvalidMoveError("La distancia no corresponde a los dados disponibles")
-        
-        if current.color == "white":
-            distance = to_pos - from_pos
-        else:
-            distance = from_pos - to_pos
-        
-        success = self.__board__.move_piece(from_pos, to_pos, current.color)
-        
-        if not success:
-            raise InvalidMoveError("Movimiento inválido")
-        
-        self.__dice__.use_value(distance)
-        
-        return True
-    
-    def enter_from_bar(self, to_pos):
-        current = self.get_current_player()
-        
-        if not current.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {current.name}")
-        
-        if not self.must_enter_from_bar():
-            raise NoPiecesInBarError("No tienes fichas en la barra")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("No hay dados disponibles")
-        
-        if current.color == "white":
-            entry_zone = range(18, 24)
-            bar_position = 24
-        else:
-            entry_zone = range(0, 6)
-            bar_position = -1
-
-        if to_pos not in entry_zone:
-            raise InvalidMoveError(f"Debes entrar en tu zona de entrada")
-        
-        if current.color == "white":
-            distance = to_pos - bar_position
-        else:
-            distance = bar_position - to_pos
-        
-        distance = abs(distance)
-        
-        if distance not in self.__dice__.get_available_values():
-            raise InvalidMoveError("La distancia no corresponde a los dados disponibles")
-        
-        success = self.__board__.enter_from_bar(to_pos, current.color)
-        
-        if not success:
-            raise InvalidMoveError("No se puede entrar en esa posición")
-        
-        self.__dice__.use_value(distance)
-        
-        return True
-    
-    def bear_off(self, from_pos):
-        current = self.get_current_player()
-        
-        if not current.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {current.name}")
-        
-        if self.must_enter_from_bar():
-            raise InvalidMoveError("Debes entrar fichas desde la barra primero")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("No hay dados disponibles")
-        
-        if not self.has_pieces_in_home_board(current.color):
-            raise InvalidMoveError("No todas tus fichas están en el home board")
-        
-        if current.color == "white":
-            if not (18 <= from_pos <= 23):
-                raise InvalidMoveError("Solo puedes sacar fichas desde tu home board")
-            distance = 24 - from_pos
-        else:
-            if not (0 <= from_pos <= 5):
-                raise InvalidMoveError("Solo puedes sacar fichas desde tu home board")
-            distance = from_pos + 1
-        
-        available = self.__dice__.get_available_values()
-        
-        can_bear_off_exact = distance in available
-        can_bear_off_higher = any(d > distance for d in available)
-        
-        if not (can_bear_off_exact or can_bear_off_higher):
-            raise InvalidMoveError("No tienes un dado válido para sacar esta ficha")
-        
-        success = self.__board__.bear_off(from_pos, current.color)
-        
-        if not success:
-            raise InvalidMoveError("No se puede sacar la ficha")
-        
-        if can_bear_off_exact:
-            self.__dice__.use_value(distance)
-        else:
-            for d in sorted(available, reverse=True):
-                if d > distance:
-                    self.__dice__.use_value(d)
-                    break
-        
-        Player.game_pieces[current.color]['on_board'] -= 1
-        Player.game_pieces[current.color]['off_board'] += 1
-           
-        if current.is_winner():
-            self.__winner__ = current
-        
-        return True
-    
-    def end_turn(self):
-        current = self.get_current_player()
-        
-        if not current.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {current.name}")
-        
-        current.end_turn()
-        
-        if self.__current_player__ == self.__player1__:
-            self.__current_player__ = self.__player2__
-        else:
-            self.__current_player__ = self.__player1__
-        
-        self.__dice__ = Dice()
-        
-        return True
+        return [self.__player1__, self.__player2__]
     
     def get_winner(self):
         return self.__winner__
     
     def is_game_over(self):
-        return self.__winner__ is not None
-    
+        state = self.__board__.get_state()
+        pieces_info = Player.game_pieces
+        
+        if pieces_info['white']['off_board'] == 15:
+            self.__winner__ = self.__player1__
+            return True
+        if pieces_info['black']['off_board'] == 15:
+            self.__winner__ = self.__player2__
+            return True
+        
+        return False
+
     def get_game_state(self):
+        pieces_info = Player.game_pieces
         return {
             "board": self.__board__.get_state(),
-            "player1": self.__player1__.get_status(),
-            "player2": self.__player2__.get_status(),
-            "current_player": self.__current_player__.name,
-            "dice": {
-                "values": self.__dice__.get_values(),
-                "available": self.__dice__.get_available_values(),
-                "is_double": self.__dice__.is_double()
+            "dice": self.__dice__.get_values(),
+            "current_player": self.__current_player__.color,
+            "started": self.__game_started__,
+            "player1": {
+                "name": self.__player1__.name,
+                "color": self.__player1__.color,
+                "pieces": pieces_info['white']
             },
-            "winner": self.__winner__.name if self.__winner__ else None,
-            "game_started": self.__game_started__
+            "player2": {
+                "name": self.__player2__.name,
+                "color": self.__player2__.color,
+                "pieces": pieces_info['black']
+            }
         }
+
+    def roll_dice(self):
+        if not self.__game_started__:
+            return None
+        if not self.__current_player__.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
+        if self.__dice__.has_available_values():
+            raise InvalidMoveError("Ya has tirado los dados en este turno.")
+        return self.__dice__.roll()
+
+    def move_piece(self, from_point, to_point):
+        if not self.__game_started__:
+            raise InvalidMoveError("El juego no ha iniciado.")
+        if not self.__current_player__.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
+        if not isinstance(from_point, int) or not isinstance(to_point, int):
+            raise InvalidMoveError("Las posiciones deben ser números enteros.")
+        if from_point < 0 or from_point > 23 or to_point < 0 or to_point > 23:
+            raise InvalidMoveError("Posiciones fuera del rango del tablero (0-23).")
+        
+        state = self.__board__.get_state()
+        if state["bar"][self.__current_player__.color] > 0:
+            raise InvalidMoveError("Debes reingresar tus fichas del bar antes de mover otras.")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("Debes tirar los dados primero.")
+        
+        distance = abs(to_point - from_point)
+        if distance not in self.__dice__.get_available_values():
+            raise InvalidMoveError(f"No puedes mover {distance} espacios con los dados actuales.")
+        
+        if self.__current_player__.color == "white" and to_point < from_point:
+            raise InvalidMoveError("Dirección incorrecta para las fichas blancas.")
+        if self.__current_player__.color == "black" and to_point > from_point:
+            raise InvalidMoveError("Dirección incorrecta para las fichas negras.")
+        
+        if not self.__board__.is_valid_move(self.__current_player__.color, from_point, to_point):
+            raise InvalidMoveError("Movimiento inválido según el estado del tablero.")
+        
+        self.__board__.move_piece(self.__current_player__.color, from_point, to_point)
+        self.__dice__.use_value(distance)
+        return True
+
+    def must_enter_from_bar(self):
+        state = self.__board__.get_state()
+        return state["bar"][self.__current_player__.color] > 0
     
+    def can_bear_off(self):
+        pieces_info = Player.game_pieces
+        color_pieces = pieces_info[self.__current_player__.color]
+        
+        state = self.__board__.get_state()
+        if state["bar"][self.__current_player__.color] > 0:
+            return False
+        
+        return True
+    
+    def enter_from_bar(self, to_point):
+        if not self.__game_started__:
+            raise InvalidMoveError("El juego no ha iniciado.")
+        if not self.__current_player__.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
+        
+        state = self.__board__.get_state()
+        if state["bar"][self.__current_player__.color] == 0:
+            raise NoPiecesInBarError("No tienes fichas en la barra.")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("Debes tirar los dados primero.")
+        
+        return True
+    
+    def bear_off(self, from_point):
+        if not self.__game_started__:
+            raise InvalidMoveError("El juego no ha iniciado.")
+        if not self.__current_player__.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
+        
+        if not self.can_bear_off():
+            raise InvalidMoveError("No puedes sacar fichas aún.")
+        
+        if not self.__dice__.has_available_values():
+            raise InvalidMoveError("Debes tirar los dados primero.")
+        
+        return True
+
+    def end_turn(self):
+        if not self.__current_player__.is_my_turn():
+            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
+        if self.__dice__.has_available_values():
+            raise InvalidMoveError("Aún tienes dados por usar.")
+        
+        self.__current_player__.end_turn()
+        self.__current_player__ = (
+            self.__player2__ if self.__current_player__ == self.__player1__ else self.__player1__
+        )
+        self.__dice__.reset()
+        return True
+
     def __str__(self):
         state = "Iniciado" if self.__game_started__ else "No iniciado"
-        return f"Backgammon Game - {state} - Turno: {self.__current_player__.name}"
-    
+        return f"Juego de Backgammon ({state}) - Turno: {self.__current_player__.name}"

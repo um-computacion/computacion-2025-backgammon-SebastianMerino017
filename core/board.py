@@ -262,9 +262,20 @@ class Board:
         self.__off_board__ = {"white": 0, "black": 0}
         self.setup_initial_position()
 
+    def is_target_valid(self, to_pos, color):
+        if not (0 <= to_pos <= 23):
+            return False
+            
+        if self.__pos__[to_pos] is not None:
+            enemy_color = "black" if color == "white" else "white"
+            if self.__pos__[to_pos][0] == enemy_color and self.__pos__[to_pos][1] > 1:
+                return False
+        
+        return True
+
+    def is_re_entry_target_valid(self, to_pos, color):
+        return self.is_target_valid(to_pos, color)
+
 
 if __name__ == "__main__":
     board = Board()
-
-    
-

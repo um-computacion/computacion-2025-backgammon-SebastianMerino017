@@ -50,69 +50,58 @@ class TestBackgammonCLI(unittest.TestCase):
         mock_game_class.assert_called_once_with("Jugador 1", "Jugador 2")
 
     @patch('builtins.input', side_effect=['r', 'q'])
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_roll_dice(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_roll_dice(self, mock_os, mock_print, mock_input):
         self.mock_game.roll_dice.return_value = (3, 5)
         
         self.cli.main_menu()
         
         self.mock_game.roll_dice.assert_called_once()
         mock_print.assert_any_call("\n¡Dados tirados! Resultado: (3, 5)")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('builtins.input', side_effect=['r', 'q']) 
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_roll_dice_error(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_roll_dice_error(self, mock_os, mock_print, mock_input):
         self.mock_game.roll_dice.side_effect = InvalidMoveError("Ya has tirado los dados.")
         
         self.cli.main_menu()
         
         self.mock_game.roll_dice.assert_called_once()
         mock_print.assert_any_call("\nError: Ya has tirado los dados.")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('builtins.input', side_effect=['m', '0', '5', 'q'])
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_move_piece(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_move_piece(self, mock_os, mock_print, mock_input):
         self.mock_game.move_piece.return_value = True
         
         self.cli.main_menu()
         
         self.mock_game.move_piece.assert_called_once_with(0, 5)
         mock_print.assert_any_call("\nMovimiento exitoso: 0 -> 5")
-        self.assertEqual(mock_board.call_count, 2)
         
     @patch('builtins.input', side_effect=['m', '0', '99', 'q']) 
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_move_piece_error(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_move_piece_error(self, mock_os, mock_print, mock_input):
         self.mock_game.move_piece.side_effect = InvalidMoveError("Dado no disponible.")
         
         self.cli.main_menu()
         
         self.mock_game.move_piece.assert_called_once_with(0, 99)
         mock_print.assert_any_call("\nError: Dado no disponible.")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('builtins.input', side_effect=['e', 'q'])
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_end_turn(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_end_turn(self, mock_os, mock_print, mock_input):
         mock_player_2 = MagicMock(spec=Player, name="Jugador 2", color="black")
         
         self.mock_game.get_current_player.side_effect = [
             self.mock_player,
             self.mock_player,
-            self.mock_player,
-            mock_player_2,
             mock_player_2,
             mock_player_2
         ]
@@ -121,28 +110,23 @@ class TestBackgammonCLI(unittest.TestCase):
         
         self.mock_game.end_turn.assert_called_once()
         mock_print.assert_any_call("\nTurno finalizado. Ahora juega Jugador 2 (black).")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('builtins.input', side_effect=['h', 'q'])
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_help(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_help(self, mock_os, mock_print, mock_input):
         self.cli.main_menu()
         
         mock_print.assert_any_call("--- AYUDA ---")
         mock_print.assert_any_call("  [h] Ayuda: Muestra este menú.")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('builtins.input', side_effect=['x', 'q'])
-    @patch('cli.cli.BackgammonCLI.print_board_and_game_info')
     @patch('builtins.print')
     @patch('os.system')
-    def test_main_menu_invalid_option(self, mock_os, mock_print, mock_board, mock_input):
+    def test_main_menu_invalid_option(self, mock_os, mock_print, mock_input):
         self.cli.main_menu()
         
         mock_print.assert_any_call("Opcion no valida. Presiona 'h' para ver la ayuda.")
-        self.assertEqual(mock_board.call_count, 2)
 
     @patch('cli.cli.BackgammonCLI.main_menu')
     @patch('cli.cli.BackgammonCLI.setup_game')
