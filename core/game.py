@@ -146,7 +146,6 @@ class Game:
         
         if not self.__dice__.has_available_values():
             raise InvalidMoveError("Debes tirar los dados primero.")
-        
         return True
     
     def bear_off(self, from_point):
@@ -160,7 +159,6 @@ class Game:
         
         if not self.__dice__.has_available_values():
             raise InvalidMoveError("Debes tirar los dados primero.")
-        
         return True
 
     def end_turn(self):

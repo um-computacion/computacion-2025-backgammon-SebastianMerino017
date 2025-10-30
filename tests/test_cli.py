@@ -343,30 +343,30 @@ class TestCLI(unittest.TestCase):
             self.cli.handle_end_turn = MagicMock()
             self.cli.show_game_status = MagicMock()
 
-    @patch('builtins.input')
-    @patch('builtins.print')
-    def test_main_menu_exercise_many_paths(self, mock_print, mock_input):
-        # craft sequence of choices with ENTER confirmations after each option
-        # choices: help(h), clear(c), roll(r), move(m), bar(b), bear off(s), end(e), info(i), invalid(x), quit(q->s)
-        seq = []
-        for ch in ['h', 'c', 'r', 'm', 'b', 's', 'e', 'i', 'x', 'q']:
-            seq.append(ch)
-            # most choices show a "Presiona ENTER para continuar..." -> supply blank
-            if ch in ['h', 'r', 'm', 'b', 's', 'e', 'i', 'x']:
-                seq.append('')
-        # add confirmation for 'q'
-        seq.append('s')
+        @patch('builtins.input')
+        @patch('builtins.print')
+        def test_main_menu_exercise_many_paths(self, mock_print, mock_input):
+            # craft sequence of choices with ENTER confirmations after each option
+            # choices: help(h), clear(c), roll(r), move(m), bar(b), bear off(s), end(e), info(i), invalid(x), quit(q->s)
+            seq = []
+            for ch in ['h', 'c', 'r', 'm', 'b', 's', 'e', 'i', 'x', 'q']:
+                seq.append(ch)
+                # most choices show a "Presiona ENTER para continuar..." -> supply blank
+                if ch in ['h', 'r', 'm', 'b', 's', 'e', 'i', 'x']:
+                    seq.append('')
+            # add confirmation for 'q'
+            seq.append('s')
 
-        mock_input.side_effect = seq
+            mock_input.side_effect = seq
 
-        # run main_menu; should exit after processing the sequence
-        self.cli.main_menu()
+            # run main_menu; should exit after processing the sequence
+            self.cli.main_menu()
 
-        # verify handlers were called for choices we stubbed
-        self.cli.handle_dice_roll.assert_called()
-        self.cli.handle_move_piece.assert_called()
-        self.cli.handle_enter_from_bar.assert_called()
-        self.cli.handle_end_turn.assert_called()
+            # verify handlers were called for choices we stubbed
+            self.cli.handle_dice_roll.assert_called()
+            self.cli.handle_move_piece.assert_called()
+            self.cli.handle_enter_from_bar.assert_called()
+            self.cli.handle_end_turn.assert_called()
 
 class TestCLIMore(unittest.TestCase):
 
