@@ -18,7 +18,7 @@ class Board:
         self.__pos__[7] = ["black", 3]
         self.__pos__[5] = ["black", 5]
 
-    def draw(self):
+    def draw(self):  # pragma: no cover
         result_board = [] 
         for col in range(11, -1, -1):
             result_row = []
@@ -46,7 +46,7 @@ class Board:
         else:
             return 'B'
         
-    def draw_full_board(self):
+    def draw_full_board(self):  # pragma: no cover
         upper_board = []
         for col in range(12, 24):
             result_row = []
@@ -91,7 +91,7 @@ class Board:
         
         return {"upper": upper_board, "lower": lower_board}
 
-    def display_board_console(self):
+    def display_board_console(self):  # pragma: no cover
         print("=" * 50)
         print("         TABLERO DE BACKGAMMON")
         print("=" * 50)

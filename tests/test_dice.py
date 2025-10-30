@@ -123,3 +123,4 @@ class TestDice(TestCase):
             self.assertEqual(dice3[1], 3)
             self.assertTrue(randint_patched.called)
             self.assertEqual(randint_patched.call_count, 6)
+
