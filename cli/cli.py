@@ -41,7 +41,18 @@ class CLI:
         self.__game__ = Game(player1_name, player2_name)
         self.__game__.start()
         
-        print(f"\n¡Juego creado! {player1_name} (white) vs {player2_name} (black)")
+        print(f"\n¡Juego creado! {self.__game__.get_players()[0]} (white) vs {self.__game__.get_players()[1]} (black)")
+        input("\nPresiona ENTER para comenzar...")
+    
+    def print_board(self):
+        self.display_game_state()
+    
+    def print_dice(self):
+        dice = self.__game__.get_dice()
+        print(f"Dados: {dice}")
+    
+    def print_game_info(self):
+        self.show_available_moves()
     
     def display_game_state(self):
         current_player = self.__game__.get_current_player()
@@ -275,6 +286,7 @@ class CLI:
         while True:
             self.clear_screen()
             self.print_header()
+            self.print_board()
             
             if self.__game__.is_game_over():
                 winner = self.__game__.get_winner()
@@ -292,8 +304,7 @@ class CLI:
                     print("\n¡Gracias por jugar!")
                     break
             
-            self.display_game_state()
-            self.show_available_moves()
+            self.print_game_info()
             
             print("\nACCIONES DISPONIBLES:")
             print("r - Tirar dados | m - Mover | b - Entrar | s - Sacar | e - Terminar turno")
@@ -309,24 +320,33 @@ class CLI:
                     break
             elif choice == 'h':
                 self.show_help()
+                input("\nPresiona ENTER para continuar...")
             elif choice == 'c':
                 continue
             elif choice == 'r':
                 self.handle_dice_roll()
+                input("\nPresiona ENTER para continuar...")
             elif choice == 'm':
                 self.handle_move_piece()
+                input("\nPresiona ENTER para continuar...")
             elif choice == 'b':
                 self.handle_enter_from_bar()
+                input("\nPresiona ENTER para continuar...")
             elif choice == 's':
                 result = self.handle_bear_off()
                 if result == "game_over":
+                    input("\nPresiona ENTER para continuar...")
                     continue
+                input("\nPresiona ENTER para continuar...")
             elif choice == 'e':
                 self.handle_end_turn()
+                input("\nPresiona ENTER para continuar...")
             elif choice == 'i':
                 self.show_game_status()
+                input("\nPresiona ENTER para continuar...")
             else:
                 print("Opcion no valida. Presiona 'h' para ver la ayuda.")
+                input("\nPresiona ENTER para continuar...")
     
     def run(self):
         try:
