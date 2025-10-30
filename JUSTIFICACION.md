@@ -53,5 +53,21 @@ Las excepciones definidas en `game.py` son:
 * **`NotYourTurnError`**: Se lanza si un jugador intenta realizar una acción (mover, tirar dados) cuando no es su turno.
 * **`NoPiecesInBarError`**: Se lanza si el jugador intenta mover una ficha del tablero normal cuando tiene fichas en la barra (`self.__bar__`).
 
+## 4. Estrategia de Testing (Tests Unitarios)
 
+Se utilizó el módulo `unittest` de Python para garantizar el correcto funcionamiento de la lógica de `core`. La estrategia fue:
+
+1.  **Testear cada clase de forma aislada**:
+    * `test_board.py`: Prueba la configuración inicial, los movimientos válidos e inválidos, las capturas y el reingreso.
+    * `test_dice.py`: Prueba que la tirada de dados funcione, que los dobles se manejen (4 valores) y que los valores se "gasten" correctamente.
+    * `test_player.py`: Prueba principalmente el sistema de turnos (`switch_turn`).
+    * `test_game.py`: Prueba el flujo completo, como `start()`, `roll_dice()`, `move_piece()` y `end_turn()`, asegurándose de que las excepciones se lancen correctamente.
+
+2.  **Uso de Mocks (`unittest.mock`)**:
+    * En `test_dice.py` y `test_game.py`, se utiliza `@patch('random.randint')`. Esto es fundamental para crear tests predecibles. En lugar de que los dados saquen un número al azar, "mockeamos" la función `random.randint` para que devuelva valores conocidos (ej. `side_effect=[3, 4]`).
+    * Esto nos permite probar escenarios específicos, como "¿qué pasa si el jugador saca un `[3, 4]`?" o "¿qué pasa si saca dobles `[6, 6]`?", sin dejar el resultado del test al azar.
+
+## 5. Anexos
+
+### Diagrama de Clases (UML)
 
