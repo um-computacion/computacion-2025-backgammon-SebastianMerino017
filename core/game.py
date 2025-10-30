@@ -1,178 +1,110 @@
-from core.board import Board
-from core.dice import Dice
+import unittest
+from unittest.mock import patch, MagicMock
+from core.game import Game, InvalidMoveError, NotYourTurnError, NoPiecesInBarError
 from core.player import Player
 
-class InvalidMoveError(Exception):
-    pass
 
-class NotYourTurnError(Exception):
-    pass
-
-class NoPiecesInBarError(Exception):
-    pass
-
-class Game:
-    def __init__(self, player1_name: str, player2_name: str):
-        self.__player1__ = Player(player1_name, "white")
-        self.__player2__ = Player(player2_name, "black")
-        self.__board__ = Board()
-        self.__dice__ = Dice()
-        self.__current_player__ = self.__player1__
-        self.__game_started__ = False
-        self.__winner__ = None
-
-    def start(self):
-        self.__game_started__ = True
-        if hasattr(self.__dice__, 'reset'):
-            self.__dice__.reset()
-        self.__current_player__ = self.__player1__
-        return True
-
-    def get_board(self):
-        return self.__board__
-
-    def get_current_player(self):
-        return self.__current_player__
+class TestGame(unittest.TestCase):
     
-    def get_dice(self):
-        return self.__dice__
+    def setUp(self):
+        self.game = Game("Juan", "María")
     
-    def get_players(self):
-        return [self.__player1__, self.__player2__]
+    def tearDown(self):
+        Player.reset_game()
     
-    def get_winner(self):
-        return self.__winner__
+    def test_initialization(self):
+        self.assertIsNotNone(self.game.get_board())
+        players = self.game.get_players()
+        self.assertEqual(len(players), 2)
+        self.assertIsNotNone(self.game.get_dice())
+        self.assertEqual(players[0].name, "Juan")
+        self.assertEqual(players[1].name, "María")
+        self.assertEqual(players[0].color, "white")
+        self.assertEqual(players[1].color, "black")
+        self.assertIsNone(self.game.get_winner())
+        self.assertFalse(self.game.is_game_over())
     
-    def is_game_over(self):
-        state = self.__board__.get_state()
-        pieces_info = Player.game_pieces
-        
-        if pieces_info['white']['off_board'] == 15:
-            self.__winner__ = self.__player1__
-            return True
-        if pieces_info['black']['off_board'] == 15:
-            self.__winner__ = self.__player2__
-            return True
-        
-        return False
-
-    def get_game_state(self):
-        pieces_info = Player.game_pieces
-        return {
-            "board": self.__board__.get_state(),
-            "dice": self.__dice__.get_values(),
-            "current_player": self.__current_player__.color,
-            "started": self.__game_started__,
-            "player1": {
-                "name": self.__player1__.name,
-                "color": self.__player1__.color,
-                "pieces": pieces_info['white']
-            },
-            "player2": {
-                "name": self.__player2__.name,
-                "color": self.__player2__.color,
-                "pieces": pieces_info['black']
-            }
-        }
-
-    def roll_dice(self):
-        if not self.__game_started__:
-            return None
-        if not self.__current_player__.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
-        if self.__dice__.has_available_values():
-            raise InvalidMoveError("Ya has tirado los dados en este turno.")
-        return self.__dice__.roll()
-
-    def move_piece(self, from_point, to_point):
-        if not self.__game_started__:
-            raise InvalidMoveError("El juego no ha iniciado.")
-        if not self.__current_player__.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
-        if not isinstance(from_point, int) or not isinstance(to_point, int):
-            raise InvalidMoveError("Las posiciones deben ser números enteros.")
-        if from_point < 0 or from_point > 23 or to_point < 0 or to_point > 23:
-            raise InvalidMoveError("Posiciones fuera del rango del tablero (0-23).")
-        
-        state = self.__board__.get_state()
-        if state["bar"][self.__current_player__.color] > 0:
-            raise InvalidMoveError("Debes reingresar tus fichas del bar antes de mover otras.")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("Debes tirar los dados primero.")
-        
-        distance = abs(to_point - from_point)
-        if distance not in self.__dice__.get_available_values():
-            raise InvalidMoveError(f"No puedes mover {distance} espacios con los dados actuales.")
-        
-        if self.__current_player__.color == "white" and to_point < from_point:
-            raise InvalidMoveError("Dirección incorrecta para las fichas blancas.")
-        if self.__current_player__.color == "black" and to_point > from_point:
-            raise InvalidMoveError("Dirección incorrecta para las fichas negras.")
-        
-        if not self.__board__.is_valid_move(self.__current_player__.color, from_point, to_point):
-            raise InvalidMoveError("Movimiento inválido según el estado del tablero.")
-        
-        self.__board__.move_piece(self.__current_player__.color, from_point, to_point)
-        self.__dice__.use_value(distance)
-        return True
-
-    def must_enter_from_bar(self):
-        state = self.__board__.get_state()
-        return state["bar"][self.__current_player__.color] > 0
+    def test_start_game(self):
+        result = self.game.start()
+        self.assertTrue(result)
     
-    def can_bear_off(self):
-        pieces_info = Player.game_pieces
-        color_pieces = pieces_info[self.__current_player__.color]
-        
-        state = self.__board__.get_state()
-        if state["bar"][self.__current_player__.color] > 0:
-            return False
-        
-        return True
+    def test_get_current_player(self):
+        current = self.game.get_current_player()
+        self.assertEqual(current.name, "Juan")
+        self.assertEqual(current.color, "white")
     
-    def enter_from_bar(self, to_point):
-        if not self.__game_started__:
-            raise InvalidMoveError("El juego no ha iniciado.")
-        if not self.__current_player__.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
-        
-        state = self.__board__.get_state()
-        if state["bar"][self.__current_player__.color] == 0:
-            raise NoPiecesInBarError("No tienes fichas en la barra.")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("Debes tirar los dados primero.")
-        
-        return True
+    def test_get_board(self):
+        board = self.game.get_board()
+        self.assertIsNotNone(board)
     
-    def bear_off(self, from_point):
-        if not self.__game_started__:
-            raise InvalidMoveError("El juego no ha iniciado.")
-        if not self.__current_player__.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
-        
-        if not self.can_bear_off():
-            raise InvalidMoveError("No puedes sacar fichas aún.")
-        
-        if not self.__dice__.has_available_values():
-            raise InvalidMoveError("Debes tirar los dados primero.")
-        
-        return True
+    def test_get_dice(self):
+        dice = self.game.get_dice()
+        self.assertIsNotNone(dice)
+    
+    def test_get_players(self):
+        players = self.game.get_players()
+        self.assertEqual(len(players), 2)
+        self.assertEqual(players[0].name, "Juan")
 
-    def end_turn(self):
-        if not self.__current_player__.is_my_turn():
-            raise NotYourTurnError(f"No es el turno de {self.__current_player__.name}")
-        if self.__dice__.has_available_values():
-            raise InvalidMoveError("Aún tienes dados por usar.")
+    @patch('random.randint', side_effect=[1, 2])
+    def test_roll_dice_not_your_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            self.game.end_turn()
         
-        self.__current_player__.end_turn()
-        self.__current_player__ = (
-            self.__player2__ if self.__current_player__ == self.__player1__ else self.__player1__
-        )
-        self.__dice__.reset()
-        return True
+        with self.assertRaises(NotYourTurnError):
+            self.game.roll_dice()
 
-    def __str__(self):
-        state = "Iniciado" if self.__game_started__ else "No iniciado"
-        return f"Juego de Backgammon ({state}) - Turno: {self.__current_player__.name}"
+    @patch('random.randint', side_effect=[1, 2, 3, 4])
+    def test_end_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            self.game.end_turn()
+            current = self.game.get_current_player()
+            self.assertEqual(current.name, "María")
+            
+            self.game.roll_dice()
+            self.game.end_turn()
+            current = self.game.get_current_player()
+            self.assertEqual(current.name, "Juan")
+    
+    @patch('random.randint', side_effect=[1, 2])
+    def test_end_turn_not_your_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            self.game.end_turn()
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.end_turn()
+
+    def test_str_representation(self):
+        result = str(self.game)
+        self.assertIn("No iniciado", result)
+        
+        self.game.start()
+        result = str(self.game)
+        self.assertIn("Iniciado", result)
+        self.assertIn("Juan", result)
+    
+    @patch('random.randint', side_effect=[3, 4])
+    def test_end_turn_with_available_dice(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.end_turn()
+            
+    @patch('random.randint', side_effect=[3, 5])
+    def test_roll_dice_after_rolling(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        
+        with self.assertRaises(InvalidMoveError):
+            self.game.roll_dice()
+
+if __name__ == '__main__':
+    unittest.main()
+

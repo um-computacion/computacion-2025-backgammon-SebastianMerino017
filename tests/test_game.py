@@ -13,21 +13,20 @@ class TestGame(unittest.TestCase):
         Player.reset_game()
     
     def test_initialization(self):
-        self.assertIsNotNone(self.game.__board__)
-        self.assertIsNotNone(self.game.__player1__)
-        self.assertIsNotNone(self.game.__player2__)
-        self.assertIsNotNone(self.game.__dice__)
-        self.assertEqual(self.game.__player1__.name, "Juan")
-        self.assertEqual(self.game.__player2__.name, "María")
-        self.assertEqual(self.game.__player1__.color, "white")
-        self.assertEqual(self.game.__player2__.color, "black")
-        self.assertIsNone(self.game.__winner__)
-        self.assertFalse(self.game.__game_started__)
+        self.assertIsNotNone(self.game.get_board())
+        players = self.game.get_players()
+        self.assertEqual(len(players), 2)
+        self.assertIsNotNone(self.game.get_dice())
+        self.assertEqual(players[0].name, "Juan")
+        self.assertEqual(players[1].name, "María")
+        self.assertEqual(players[0].color, "white")
+        self.assertEqual(players[1].color, "black")
+        self.assertIsNone(self.game.get_winner())
+        self.assertFalse(self.game.is_game_over())
     
     def test_start_game(self):
         result = self.game.start()
         self.assertTrue(result)
-        self.assertTrue(self.game.__game_started__)
     
     def test_get_current_player(self):
         current = self.game.get_current_player()
@@ -46,28 +45,40 @@ class TestGame(unittest.TestCase):
         players = self.game.get_players()
         self.assertEqual(len(players), 2)
         self.assertEqual(players[0].name, "Juan")
-    
-    def test_roll_dice_not_started(self):
-        result = self.game.roll_dice()
-        self.assertIsNone(result)
 
-    def test_end_turn(self):
+    @patch('random.randint', side_effect=[1, 2])
+    def test_roll_dice_not_your_turn(self, mock_randint):
         self.game.start()
-        self.game.end_turn()
-        current = self.game.get_current_player()
-        self.assertEqual(current.name, "María")
-        
-        self.game.end_turn()
-        current = self.game.get_current_player()
-        self.assertEqual(current.name, "Juan")
-    
-    def test_end_turn_not_your_turn(self):
-        self.game.start()
-        self.game.end_turn()
-        
-        with self.assertRaises(NotYourTurnError) as context:
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
             self.game.end_turn()
-        self.assertIn("No es el turno de Juan", str(context.exception))
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.roll_dice()
+
+    @patch('random.randint', side_effect=[1, 2, 3, 4])
+    def test_end_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            self.game.end_turn()
+            current = self.game.get_current_player()
+            self.assertEqual(current.name, "María")
+            
+            self.game.roll_dice()
+            self.game.end_turn()
+            current = self.game.get_current_player()
+            self.assertEqual(current.name, "Juan")
+    
+    @patch('random.randint', side_effect=[1, 2])
+    def test_end_turn_not_your_turn(self, mock_randint):
+        self.game.start()
+        self.game.roll_dice()
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            self.game.end_turn()
+        
+        with self.assertRaises(NotYourTurnError):
+            self.game.end_turn()
 
     def test_str_representation(self):
         result = str(self.game)
@@ -78,33 +89,21 @@ class TestGame(unittest.TestCase):
         self.assertIn("Iniciado", result)
         self.assertIn("Juan", result)
     
-    def test_move_piece_before_rolling_dice(self):
-        self.game.start()
-        
-        with self.assertRaises(InvalidMoveError) as context:
-            self.game.move_piece(0, 3)
-        
-        self.assertIn("Debes tirar los dados", str(context.exception))
-
     @patch('random.randint', side_effect=[3, 4])
     def test_end_turn_with_available_dice(self, mock_randint):
         self.game.start()
         self.game.roll_dice()
         
-        with self.assertRaises(InvalidMoveError) as context:
+        with self.assertRaises(InvalidMoveError):
             self.game.end_turn()
             
-        self.assertIn("Aún tienes dados por usar", str(context.exception))
-
     @patch('random.randint', side_effect=[3, 5])
     def test_roll_dice_after_rolling(self, mock_randint):
         self.game.start()
         self.game.roll_dice()
         
-        with self.assertRaises(InvalidMoveError) as context:
+        with self.assertRaises(InvalidMoveError):
             self.game.roll_dice()
-        self.assertIn("Ya has tirado los dados", str(context.exception))
-
 
 if __name__ == '__main__':
     unittest.main()

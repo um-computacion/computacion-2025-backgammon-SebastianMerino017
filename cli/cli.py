@@ -9,7 +9,7 @@ from core.dice import Dice
 from core.player import Player
 
 
-class BackgammonCLI:
+class CLI:
     def __init__(self):
         self.__game__ = None
         self.__running__ = False
@@ -30,8 +30,8 @@ class BackgammonCLI:
         print("CONFIGURACION DEL JUEGO")
         print("-" * 30)
         
-        player1_name = input("Nombre del Jugador 1 (Blanco): ").strip()
-        player2_name = input("Nombre del Jugador 2 (Negro): ").strip()
+        player1_name = input("Nombre del Jugador 1 (white): ").strip()
+        player2_name = input("Nombre del Jugador 2 (black): ").strip()
         
         if not player1_name:
             player1_name = "Jugador 1"
@@ -41,8 +41,7 @@ class BackgammonCLI:
         self.__game__ = Game(player1_name, player2_name)
         self.__game__.start()
         
-        print(f"\n¡Juego creado! {player1_name} (Blanco) vs {player2_name} (Negro)")
-        input("\nPresiona Enter para comenzar...")
+        print(f"\n¡Juego creado! {player1_name} (white) vs {player2_name} (black)")
     
     def display_game_state(self):
         current_player = self.__game__.get_current_player()
@@ -53,8 +52,8 @@ class BackgammonCLI:
         print(f"Dados: {dice}")
         
         pieces_info = Player.game_pieces
-        print(f"Fichas en tablero - Blanco: {pieces_info['white']['on_board']}, Negro: {pieces_info['black']['on_board']}")
-        print(f"Fichas fuera - Blanco: {pieces_info['white']['off_board']}, Negro: {pieces_info['black']['off_board']}")
+        print(f"Fichas en tablero - white: {pieces_info['white']['on_board']}, black: {pieces_info['black']['on_board']}")
+        print(f"Fichas fuera - white: {pieces_info['white']['off_board']}, black: {pieces_info['black']['off_board']}")
         
         print()
         board.display_board_console()
@@ -71,7 +70,8 @@ class BackgammonCLI:
         
         if self.__game__.must_enter_from_bar():
             current_player = self.__game__.get_current_player()
-            bar_count = self.__game__.get_board().__bar__[current_player.color]
+            board_state = self.__game__.get_board().get_state()
+            bar_count = board_state['bar'][current_player.color]
             print(f"ATENCION: Tienes {bar_count} ficha(s) en la barra que deben entrar primero")
         
         if self.__game__.can_bear_off():
@@ -84,8 +84,6 @@ class BackgammonCLI:
                 print(f"\n{self.__game__.get_current_player().name} tiro: {dice_result}")
                 if self.__game__.get_dice().is_double():
                     print("¡DOBLE! Tienes 4 movimientos disponibles")
-            else:
-                print("Error al tirar los dados")
         except NotYourTurnError as e:
             print(f"Error: {e}")
         except Exception as e:
@@ -115,8 +113,9 @@ class BackgammonCLI:
                 print("✓ Movimiento realizado exitosamente")
                 
                 board = self.__game__.get_board()
+                board_state = board.get_state()
                 enemy_color = "black" if self.__game__.get_current_player().color == "white" else "white"
-                if board.__bar__[enemy_color] > 0:
+                if board_state['bar'][enemy_color] > 0:
                     print("¡Capturaste una ficha enemiga!")
                     
         except InvalidMoveError as e:
@@ -134,7 +133,8 @@ class BackgammonCLI:
             print("-" * 30)
             
             current_player = self.__game__.get_current_player()
-            bar_count = self.__game__.get_board().__bar__[current_player.color]
+            board_state = self.__game__.get_board().get_state()
+            bar_count = board_state['bar'][current_player.color]
             
             print(f"Tienes {bar_count} ficha(s) en la barra")
             
@@ -309,33 +309,24 @@ class BackgammonCLI:
                     break
             elif choice == 'h':
                 self.show_help()
-                input("\nPresiona Enter para continuar...")
             elif choice == 'c':
                 continue
             elif choice == 'r':
                 self.handle_dice_roll()
-                input("\nPresiona Enter para continuar...")
             elif choice == 'm':
                 self.handle_move_piece()
-                input("\nPresiona Enter para continuar...")
             elif choice == 'b':
                 self.handle_enter_from_bar()
-                input("\nPresiona Enter para continuar...")
             elif choice == 's':
                 result = self.handle_bear_off()
                 if result == "game_over":
-                    input("\nPresiona Enter para continuar...")
                     continue
-                input("\nPresiona Enter para continuar...")
             elif choice == 'e':
                 self.handle_end_turn()
-                input("\nPresiona Enter para continuar...")
             elif choice == 'i':
                 self.show_game_status()
-                input("\nPresiona Enter para continuar...")
             else:
                 print("Opcion no valida. Presiona 'h' para ver la ayuda.")
-                input("\nPresiona Enter para continuar...")
     
     def run(self):
         try:
@@ -359,7 +350,7 @@ class BackgammonCLI:
 
 
 def main():
-    cli = BackgammonCLI()
+    cli = CLI()
     cli.run()
 
 
