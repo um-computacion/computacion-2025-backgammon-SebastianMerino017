@@ -199,7 +199,6 @@ def main():
 
     game = Game("Jugador 1", "Jugador 2")
     game.start()
-    board = game.get_board()
 
     hitmap = {}
     
@@ -244,7 +243,7 @@ def main():
                 
                 current_player = game.get_current_player()
                 current_color = current_player.color
-                board_state = board.get_state()
+                board_state = game.get_board().get_state()
 
                 if selected_piece_idx is None:
                     if idx == f'bar_{current_color}':
@@ -281,7 +280,7 @@ def main():
                         game_message = str(err)
                         
 
-        current_board_state = board.get_state()
+        current_board_state = game.get_board().get_state()
         
         hitmap = draw_board_and_pieces(screen, current_board_state, font_checker, selected_piece_idx)
         
