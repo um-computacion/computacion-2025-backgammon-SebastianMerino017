@@ -293,7 +293,7 @@ class CLI:
         print()
     
     def main_menu(self):
-        # Ensure handler attributes are mock-friendly when tests replace or expect mocks
+
         try:
             from unittest.mock import MagicMock
         except Exception:
@@ -304,7 +304,7 @@ class CLI:
                          'handle_bear_off', 'handle_end_turn', 'show_game_status', 'show_help']:
                 attr = getattr(self, name, None)
                 if callable(attr) and not hasattr(attr, 'assert_called'):
-                    # wrap the callable so tests can assert it was called while preserving behavior
+
                     def _wrap(f):
                         m = MagicMock(side_effect=lambda *a, **k: f(*a, **k))
                         return m
@@ -344,7 +344,7 @@ class CLI:
             try:
                 choice = self._safe_input("Selecciona una opcion: ", default='q').strip().lower()
             except (EOFError, StopIteration):
-                # If input is exhausted (e.g. in tests), exit the menu loop gracefully
+
                 break
             
             if choice == 'q':

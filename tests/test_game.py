@@ -84,7 +84,7 @@ class TestGame(unittest.TestCase):
         self.game._Game__dice_rolled__ = True 
         
         with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
-            # simulate that it's no longer the original player's turn
+
             from core.player import Player as _Player
             _Player.switch_turn()
             with self.assertRaises(NotYourTurnError):
@@ -131,7 +131,7 @@ class TestGameMore(unittest.TestCase):
 
     def test_move_piece_not_your_turn_raises(self):
         self.game.start()
-        # force current global turn to opposite
+
         Player.current_turn = 'black'
         with self.assertRaises(NotYourTurnError):
             self.game.move_piece(0, 1)
@@ -151,7 +151,7 @@ class TestGameMore(unittest.TestCase):
     def test_move_piece_bar_present(self):
         self.game.start()
         Player.current_turn = 'white'
-        # mock board state showing a piece in bar
+
         self.game.__board__.get_state = MagicMock(return_value={
             'positions': [], 'bar': {'white': 1, 'black': 0}, 'off_board': {}
         })
@@ -161,11 +161,11 @@ class TestGameMore(unittest.TestCase):
     def test_move_piece_no_dice(self):
         self.game.start()
         Player.current_turn = 'white'
-        # no pieces in bar
+
         self.game.__board__.get_state = MagicMock(return_value={
             'positions': [], 'bar': {'white': 0, 'black': 0}, 'off_board': {}
         })
-        # replace dice with mock that has no available values
+
         dice = MagicMock()
         dice.has_available_values.return_value = False
         self.game.__dice__ = dice
@@ -182,7 +182,7 @@ class TestGameMore(unittest.TestCase):
         dice.has_available_values.return_value = True
         dice.get_available_values.return_value = [1, 2]
         self.game.__dice__ = dice
-        # distance 3 not available
+ 
         with self.assertRaises(InvalidMoveError):
             self.game.move_piece(0, 3)
 
@@ -196,7 +196,7 @@ class TestGameMore(unittest.TestCase):
         dice.has_available_values.return_value = True
         dice.get_available_values.return_value = [3]
         self.game.__dice__ = dice
-        # white moving backwards
+
         with self.assertRaises(InvalidMoveError):
             self.game.move_piece(5, 2)
 
@@ -210,7 +210,7 @@ class TestGameMore(unittest.TestCase):
         dice.has_available_values.return_value = True
         dice.get_available_values.return_value = [3]
         self.game.__dice__ = dice
-        # board rejects move
+  
         self.game.__board__.is_valid_move = MagicMock(return_value=False)
         with self.assertRaises(InvalidMoveError):
             self.game.move_piece(0, 3)
@@ -226,9 +226,9 @@ class TestGameMore(unittest.TestCase):
         dice.get_available_values.return_value = [3]
         dice.use_value.return_value = True
         self.game.__dice__ = dice
-        # board allows move
+  
         self.game.__board__.is_valid_move = MagicMock(return_value=True)
-        # monkeypatch move_piece to accept the call signature used by Game
+
         self.game.__board__.move_piece = MagicMock(return_value=True)
         res = self.game.move_piece(0, 3)
         self.assertTrue(res)
@@ -237,20 +237,20 @@ class TestGameMore(unittest.TestCase):
     def test_enter_from_bar_success(self):
         self.game.start()
         Player.current_turn = 'white'
-        # set board state with piece in bar
+ 
         self.game.__board__.get_state = MagicMock(return_value={
             'positions': [], 'bar': {'white': 1, 'black': 0}, 'off_board': {}
         })
         dice = MagicMock()
         dice.has_available_values.return_value = True
         self.game.__dice__ = dice
-        # should return True (method does no mutation)
+
         self.assertTrue(self.game.enter_from_bar(18))
 
     def test_bear_off_success(self):
         self.game.start()
         Player.current_turn = 'white'
-        # board has no pieces in bar
+  
         self.game.__board__.get_state = MagicMock(return_value={
             'positions': [], 'bar': {'white': 0, 'black': 0}, 'off_board': {}
         })
@@ -262,7 +262,7 @@ class TestGameMore(unittest.TestCase):
     def test_end_turn_requires_rolled(self):
         self.game.start()
         Player.current_turn = 'white'
-        # didn't roll dice
+
         with self.assertRaises(InvalidMoveError):
             self.game.end_turn()
 
@@ -282,14 +282,14 @@ class TestGameExtra(unittest.TestCase):
         self.assertFalse(state['started'])
 
     def test_is_game_over_sets_winner(self):
-        # set white as winner via Player.game_pieces
+ 
         Player.game_pieces['white']['off_board'] = 15
         over = self.game.is_game_over()
         self.assertTrue(over)
         self.assertIsNotNone(self.game.get_winner())
 
     def test_roll_dice_before_start(self):
-        # should return None if game not started
+
         res = self.game.roll_dice()
         self.assertIsNone(res)
 
@@ -314,9 +314,9 @@ class TestGameCoverage(unittest.TestCase):
         """Cubre el caso en que el juego ya está iniciado."""
         self.game.start()
         result = self.game.start()
-        self.assertTrue(result)  # no debería fallar ni reiniciar jugadores
+        self.assertTrue(result) 
 
-    @patch('random.randint', side_effect=[4, 4])  # doble
+    @patch('random.randint', side_effect=[4, 4])  
     def test_roll_dice_double(self, mock_randint):
         """Verifica que el doble se maneje correctamente."""
         self.game.start()

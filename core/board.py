@@ -161,12 +161,12 @@ class Board:
         if len(args) != 3:
             return False
 
-        # detect old style: (from_pos:int, to_pos:int, color:str)
+  
         a, b, c = args
         if isinstance(a, int) and isinstance(b, int) and isinstance(c, str):
             from_pos, to_pos, color = a, b, c
         else:
-            # assume new style: (color, from_pos, to_pos)
+ 
             color, from_pos, to_pos = a, b, c
 
         if not self.is_valid_position(from_pos) or not self.is_valid_position(to_pos):
