@@ -34,70 +34,91 @@ class TestCLI(unittest.TestCase):
         self.cli.handle_dice_roll = MagicMock()
         self.cli.handle_move_piece = MagicMock()
         self.cli.handle_end_turn = MagicMock()
+        self.cli.handle_bear_off = MagicMock()
+        self.cli.handle_enter_from_bar = MagicMock()
+        self.cli.show_game_status = MagicMock()
+        self.cli.show_available_moves = MagicMock()
 
 
-    @patch('builtins.input', side_effect=["Jugador Test 1", "Jugador Test 2"])
+    @patch('builtins.input', side_effect=["Jugador Test 1", "Jugador Test 2", "ENTER"])
     @patch('builtins.print')
     @patch('cli.cli.Game', return_value=MagicMock(spec=Game))
-    @patch('os.system')
-    def test_setup_game_names(self, mock_os, mock_game_class, mock_print, mock_input):
+    def test_setup_game_names(self, mock_game_class, mock_print, mock_input):
         cli = CLI()
         cli.clear_screen = MagicMock()
         cli.print_header = MagicMock()
         cli.setup_game()
         
-        self.assertEqual(mock_input.call_count, 2)
+        self.assertEqual(mock_input.call_count, 3)
         mock_game_class.assert_called_once_with("Jugador Test 1", "Jugador Test 2")
         cli.__game__.start.assert_called_once()
-        mock_print.assert_any_call(f"\n¡Juego creado! Jugador Test 1 (white) vs Jugador Test 2 (black)")
+        mock_print.assert_any_call(f"\n¡Juego creado! {cli.__game__.get_players()[0]} (white) vs {cli.__game__.get_players()[1]} (black)")
 
-    @patch('builtins.input', side_effect=["", ""])
+    @patch('builtins.input', side_effect=["", "", "ENTER"])
     @patch('builtins.print')
     @patch('cli.cli.Game', return_value=MagicMock(spec=Game))
-    @patch('os.system')
-    def test_setup_game_default_names(self, mock_os, mock_game_class, mock_print, mock_input):
+    def test_setup_game_default_names(self, mock_game_class, mock_print, mock_input):
         cli = CLI()
         cli.clear_screen = MagicMock()
         cli.print_header = MagicMock()
         cli.setup_game()
         
-        self.assertEqual(mock_input.call_count, 2)
+        self.assertEqual(mock_input.call_count, 3)
         mock_game_class.assert_called_once_with("Jugador 1", "Jugador 2")
 
-    @patch('builtins.input', side_effect=['r', 'q'])
+    @patch('builtins.input', side_effect=['r', 'ENTER', 'q', 's'])
     @patch('builtins.print')
     def test_main_menu_roll_dice(self, mock_print, mock_input):
         self.cli.main_menu()
         self.cli.handle_dice_roll.assert_called_once()
         self.assertEqual(self.cli.print_board.call_count, 2)
 
-    @patch('builtins.input', side_effect=['m', 'q'])
+    @patch('builtins.input', side_effect=['m', 'ENTER', 'q', 's'])
     @patch('builtins.print')
     def test_main_menu_move_piece(self, mock_print, mock_input):
         self.cli.main_menu()
         self.cli.handle_move_piece.assert_called_once()
         self.assertEqual(self.cli.print_board.call_count, 2)
         
-    @patch('builtins.input', side_effect=['e', 'q'])
+    @patch('builtins.input', side_effect=['e', 'ENTER', 'q', 's'])
     @patch('builtins.print')
     def test_main_menu_end_turn(self, mock_print, mock_input):
         self.cli.main_menu()
         self.cli.handle_end_turn.assert_called_once()
         self.assertEqual(self.cli.print_board.call_count, 2)
 
-    @patch('builtins.input', side_effect=['h', 'q'])
+    @patch('builtins.input', side_effect=['h', 'q', 's'])
     @patch('builtins.print')
     def test_main_menu_help(self, mock_print, mock_input):
         self.cli.main_menu()
         self.cli.show_help.assert_called_once()
         self.assertEqual(self.cli.print_board.call_count, 2)
 
-    @patch('builtins.input', side_effect=['x', 'q'])
+    @patch('builtins.input', side_effect=['x', 'ENTER', 'q', 's'])
     @patch('builtins.print')
     def test_main_menu_invalid_option(self, mock_print, mock_input):
         self.cli.main_menu()
         mock_print.assert_any_call("Opcion no valida. Presiona 'h' para ver la ayuda.")
         self.assertEqual(self.cli.print_board.call_count, 2)
+    
+    @patch('builtins.input', side_effect=['b', 'ENTER', 'q', 's'])
+    @patch('builtins.print')
+    def test_main_menu_bar(self, mock_print, mock_input):
+        self.cli.main_menu()
+        self.cli.handle_enter_from_bar.assert_called_once()
+    
+    @patch('builtins.input', side_effect=['s', 'ENTER', 'q', 's'])
+    @patch('builtins.print')
+    def test_main_menu_bear_off(self, mock_print, mock_input):
+        self.cli.handle_bear_off.return_value = "ok"
+        self.cli.main_menu()
+        self.cli.handle_bear_off.assert_called_once()
+
+    @patch('builtins.input', side_effect=['i', 'ENTER', 'q', 's'])
+    @patch('builtins.print')
+    def test_main_menu_status(self, mock_print, mock_input):
+        self.cli.main_menu()
+        self.cli.show_game_status.assert_called_once()
 
     @patch('builtins.print')
     @patch('os.system')

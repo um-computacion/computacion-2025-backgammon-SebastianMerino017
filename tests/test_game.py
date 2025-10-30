@@ -7,6 +7,7 @@ from core.player import Player
 class TestGame(unittest.TestCase):
     
     def setUp(self):
+        Player.reset_game()
         self.game = Game("Juan", "María")
     
     def tearDown(self):
@@ -46,12 +47,9 @@ class TestGame(unittest.TestCase):
         self.assertEqual(len(players), 2)
         self.assertEqual(players[0].name, "Juan")
 
-    @patch('random.randint', side_effect=[1, 2])
-    def test_roll_dice_not_your_turn(self, mock_randint):
+    def test_roll_dice_not_your_turn(self):
         self.game.start()
-        self.game.roll_dice()
-        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
-            self.game.end_turn()
+        Player.switch_turn()
         
         with self.assertRaises(NotYourTurnError):
             self.game.roll_dice()
@@ -59,26 +57,35 @@ class TestGame(unittest.TestCase):
     @patch('random.randint', side_effect=[1, 2, 3, 4])
     def test_end_turn(self, mock_randint):
         self.game.start()
+        
         self.game.roll_dice()
+        self.game._Game__dice_rolled__ = True
         with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
             self.game.end_turn()
-            current = self.game.get_current_player()
-            self.assertEqual(current.name, "María")
-            
-            self.game.roll_dice()
+        current = self.game.get_current_player()
+        self.assertEqual(current.name, "María")
+        
+        self.game.roll_dice()
+        self.game._Game__dice_rolled__ = True
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
             self.game.end_turn()
-            current = self.game.get_current_player()
-            self.assertEqual(current.name, "Juan")
+        current = self.game.get_current_player()
+        self.assertEqual(current.name, "Juan")
     
-    @patch('random.randint', side_effect=[1, 2])
+    @patch('random.randint', side_effect=[1, 2, 3, 4]) 
     def test_end_turn_not_your_turn(self, mock_randint):
         self.game.start()
-        self.game.roll_dice()
+        self.game.roll_dice() 
+        self.game._Game__dice_rolled__ = True 
         with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
-            self.game.end_turn()
+            self.game.end_turn() 
         
-        with self.assertRaises(NotYourTurnError):
-            self.game.end_turn()
+        self.game.roll_dice() 
+        self.game._Game__dice_rolled__ = True 
+        
+        with patch.object(self.game.get_dice(), 'has_available_values', return_value=False):
+            with self.assertRaises(NotYourTurnError):
+                self.game.end_turn()
 
     def test_str_representation(self):
         result = str(self.game)
@@ -92,18 +99,20 @@ class TestGame(unittest.TestCase):
     @patch('random.randint', side_effect=[3, 4])
     def test_end_turn_with_available_dice(self, mock_randint):
         self.game.start()
-        self.game.roll_dice()
+        self.game.roll_dice() 
+        self.game._Game__dice_rolled__ = True 
         
         with self.assertRaises(InvalidMoveError):
-            self.game.end_turn()
+            self.game.end_turn() 
             
     @patch('random.randint', side_effect=[3, 5])
     def test_roll_dice_after_rolling(self, mock_randint):
         self.game.start()
-        self.game.roll_dice()
+        self.game.roll_dice() 
+        self.game._Game__dice_rolled__ = True 
         
         with self.assertRaises(InvalidMoveError):
-            self.game.roll_dice()
+            self.game.roll_dice() 
 
 if __name__ == '__main__':
     unittest.main()
