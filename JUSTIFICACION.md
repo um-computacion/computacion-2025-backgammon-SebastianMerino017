@@ -43,3 +43,15 @@ Cada clase en el paquete `core` fue diseñada con una responsabilidad única y b
     * En lugar de gestionar 30 objetos `Checker`, la clase `Board` usa una representación de datos simple: `self.__pos__` es una lista donde cada índice es `[color, cantidad_de_fichas]`.
     * Esto hace que los movimientos, las capturas y el conteo de fichas sean operaciones de listas mucho más rápidas y simples, reduciendo la complejidad del estado del juego. La clase `Checker` se mantiene, pero no es la unidad fundamental de la lógica del tablero.
 
+## 3. Manejo de Excepciones
+
+Para comunicar errores desde la capa `core` a las capas de UI, se decidió usar excepciones personalizadas en lugar de simplemente retornar `False` o códigos de error. Esto permite a la UI saber *exactamente* qué salió mal y mostrar un mensaje claro al usuario.
+
+Las excepciones definidas en `game.py` son:
+
+* **`InvalidMoveError`**: Se lanza cuando un movimiento no es legal (ej. el dado no coincide, la casilla de destino está bloqueada).
+* **`NotYourTurnError`**: Se lanza si un jugador intenta realizar una acción (mover, tirar dados) cuando no es su turno.
+* **`NoPiecesInBarError`**: Se lanza si el jugador intenta mover una ficha del tablero normal cuando tiene fichas en la barra (`self.__bar__`).
+
+
+
