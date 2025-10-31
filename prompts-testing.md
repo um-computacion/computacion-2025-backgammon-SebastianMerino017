@@ -1,10 +1,12 @@
+## Prompt de Clase:
+
 Este documento registra la secuencia de prompts utilizados para generar, refinar y estructurar las pruebas unitarias, de integración y de aceptación del proyecto Backgammon. El objetivo es asegurar la robustez de la lógica del juego y mantener una trazabilidad completa del proceso de Quality Assurance (QA).
 
 1. Pruebas Unitarias (Core)
 
 El objetivo de esta fase es aislar y probar cada componente (.py) de la lógica core de forma independiente.
 
-test_checker.py
+# test_checker.py
 
     Prompt Inicial: "Empecemos por lo más simple. Genera el archivo test_checker.py usando unittest. Necesito probar la clase Checker.
 
@@ -18,7 +20,7 @@ test_checker.py
 
         Test 5: Probar el método release(pos). Empezar con una ficha capturada, llamar a release(10) y verificar que is_captured() devuelva False y get_position() devuelva 10."
 
-test_dice.py (Prueba de la función get_dice)
+# test_dice.py (Prueba de la función get_dice)
 
     Prompt Inicial: "Necesito probar la función get_dice() en dice.py. Esta función depende de random.randint, así que no es determinista. Debo usar unittest.mock.patch sobre random.randint para simular sus resultados."
 
@@ -32,7 +34,7 @@ test_dice.py (Prueba de la función get_dice)
 
     Refinamiento: "Añadir más casos de prueba a test_dice.py para asegurar que patch funciona correctamente en diferentes contextos, como usarlo con with."
 
-test_dice_class.py (Prueba de la clase Dice)
+# test_dice_class.py (Prueba de la clase Dice)
 
     Prompt Inicial: "Ahora, necesito un unittest para la clase Dice. Esta clase importa y usa la función get_dice() que ya probamos. Por lo tanto, en lugar de mockear random.randint, debo mockear la función get_dice."
 
@@ -66,7 +68,7 @@ test_dice_class.py (Prueba de la clase Dice)
 
         Test 4 (test_str_variants): Probar el método __str__ en diferentes estados (sin tirar, tirada normal, tirada doble)."
 
-test_player.py
+# test_player.py
 
     Prompt Inicial (CRÍTICO): "Genera test_player.py. La clase Player usa atributos de clase (estáticos) como current_turn y game_pieces. Esto es un gran problema para las pruebas unitarias, porque el estado de un test se "filtrará" al siguiente.
 
@@ -90,7 +92,7 @@ test_player.py
 
         test_bear_off_piece: Probar p1.bear_off_piece(). Verificar que Player.game_pieces['white']['on_board'] sea 14 y ['off_board'] sea 1.
 
-test_board.py
+# test_board.py
 
     Prompt Inicial: "Este es el test unitario más complejo. Necesito probar board.py a fondo. Genera test_board.py."
 
