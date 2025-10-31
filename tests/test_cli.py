@@ -1,376 +1,820 @@
+import unittest
+from unittest.mock import patch, MagicMock
 import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from cli.cli import CLI
 from core.game import Game, InvalidMoveError, NotYourTurnError, NoPiecesInBarError
-from core.board import Board
-from core.dice import Dice
 from core.player import Player
 
 
-class BackgammonCLI:
-    def __init__(self):
-        self.__game__ = None
-        self.__running__ = False
-    
-    def clear_screen(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
-    
-    def print_header(self):
-        print("=" * 60)
-        print("           BACKGAMMON - JUEGO DE TABLERO")
-        print("=" * 60)
-        print()
-    
-    def setup_game(self):
-        self.clear_screen()
-        self.print_header()
-        
-        print("CONFIGURACION DEL JUEGO")
-        print("-" * 30)
-        
-        player1_name = input("Nombre del Jugador 1 (Blanco): ").strip()
-        player2_name = input("Nombre del Jugador 2 (Negro): ").strip()
-        
-        if not player1_name:
-            player1_name = "Jugador 1"
-        if not player2_name:
-            player2_name = "Jugador 2"
-        
-        self.__game__ = Game(player1_name, player2_name)
-        self.__game__.start()
-        
-        print(f"\n¡Juego creado! {player1_name} (Blanco) vs {player2_name} (Negro)")
-        input("\nPresiona Enter para comenzar...")
-    
-    def display_game_state(self):
-        if not self.__game__:
-            return
-            
-        current_player = self.__game__.get_current_player()
-        dice = self.__game__.get_dice()
-        board = self.__game__.get_board()
-        
-        print(f"Turno actual: {current_player.name} ({current_player.color})")
-        print(f"Dados: {dice}")
-        
-        pieces_info = Player.game_pieces
-        print(f"Fichas en tablero - Blanco: {pieces_info['white']['on_board']}, Negro: {pieces_info['black']['on_board']}")
-        print(f"Fichas fuera - Blanco: {pieces_info['white']['off_board']}, Negro: {pieces_info['black']['off_board']}")
-        
-        print()
-        board.display_board_console()
-        print()
-    
-    def show_available_moves(self):
-        if not self.__game__:
-            return
-            
-        dice = self.__game__.get_dice()
-        available_values = dice.get_available_values()
-        
-        if available_values:
-            print(f"Dados disponibles: {available_values}")
-        else:
-            print("No hay dados disponibles - termina tu turno")
-        
-        if self.__game__.must_enter_from_bar():
-            current_player = self.__game__.get_current_player()
-            bar_count = self.__game__.get_board()._Board__bar__[current_player.color]
-            print(f"ATENCION: Tienes {bar_count} ficha(s) en la barra que deben entrar primero")
-        
-        if self.__game__.can_bear_off():
-            print("Puedes comenzar a sacar fichas del tablero")
-    
-    def handle_dice_roll(self):
-        try:
-            dice_result = self.__game__.roll_dice()
-            if dice_result:
-                print(f"\n{self.__game__.get_current_player().name} tiro: {dice_result}")
-                if self.__game__.get_dice().is_double():
-                    print("¡DOBLE! Tienes 4 movimientos disponibles")
-            else:
-                print("Error al tirar los dados")
-        except NotYourTurnError as e:
-            print(f"Error: {e}")
-        except Exception as e:
-            print(f"Error inesperado: {e}")
-    
-    def handle_move_piece(self):
-        try:
-            print("\nMOVIMIENTO DE FICHA")
-            print("-" * 20)
-            
-            from_pos = input("Posicion de origen (1-24): ").strip()
-            to_pos = input("Posicion de destino (1-24): ").strip()
-            
-            if not from_pos.isdigit() or not to_pos.isdigit():
-                print("Error: Las posiciones deben ser numeros")
-                return
-            
-            from_pos = int(from_pos) - 1
-            to_pos = int(to_pos) - 1
-            
-            if not (0 <= from_pos <= 23 and 0 <= to_pos <= 23):
-                print("Error: Las posiciones deben estar entre 1 y 24")
-                return
-            
-            success = self.__game__.move_piece(from_pos, to_pos)
-            if success:
-                print("✓ Movimiento realizado exitosamente")
-                
-                board = self.__game__.get_board()
-                enemy_color = "black" if self.__game__.get_current_player().color == "white" else "white"
-                if board._Board__bar__[enemy_color] > 0:
-                    print("¡Capturaste una ficha enemiga!")
-                    
-        except InvalidMoveError as e:
-            print(f"Movimiento invalido: {e}")
-        except NotYourTurnError as e:
-            print(f"Error de turno: {e}")
-        except ValueError:
-            print("Error: Ingresa numeros validos")
-        except Exception as e:
-            print(f"Error inesperado: {e}")
-    
-    def handle_enter_from_bar(self):
-        try:
-            print("\nENTRAR FICHA DESDE LA BARRA")
-            print("-" * 30)
-            
-            current_player = self.__game__.get_current_player()
-            bar_count = self.__game__.get_board()._Board__bar__[current_player.color]
-            
-            print(f"Tienes {bar_count} ficha(s) en la barra")
-            
-            if current_player.color == "white":
-                print("Zona de entrada valida: posiciones 19-24")
-                valid_range = "19-24"
-                min_pos, max_pos = 19, 24
-            else:
-                print("Zona de entrada valida: posiciones 1-6")
-                valid_range = "1-6"
-                min_pos, max_pos = 1, 6
-            
-            to_pos = input(f"Posicion de destino ({valid_range}): ").strip()
-            
-            if not to_pos.isdigit():
-                print("Error: La posicion debe ser un numero")
-                return
-            
-            to_pos_num = int(to_pos)
-            if not (min_pos <= to_pos_num <= max_pos):
-                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
-                return
-            
-            to_pos = to_pos_num - 1
-            
-            success = self.__game__.enter_from_bar(to_pos)
-            if success:
-                print("✓ Ficha entro exitosamente desde la barra")
-                
-        except NoPiecesInBarError as e:
-            print(f"Error: {e}")
-        except InvalidMoveError as e:
-            print(f"Movimiento invalido: {e}")
-        except NotYourTurnError as e:
-            print(f"Error de turno: {e}")
-        except ValueError:
-            print("Error: Ingresa un numero valido")
-        except Exception as e:
-            print(f"Error inesperado: {e}")
-    
-    def handle_bear_off(self):
-        try:
-            print("\nSACAR FICHA DEL TABLERO")
-            print("-" * 25)
-            
-            current_player = self.__game__.get_current_player()
-            
-            if current_player.color == "white":
-                print("Puedes sacar desde: posiciones 19-24")
-                valid_range = "19-24"
-                min_pos, max_pos = 19, 24
-            else:
-                print("Puedes sacar desde: posiciones 1-6")
-                valid_range = "1-6"
-                min_pos, max_pos = 1, 6
-            
-            from_pos = input(f"Posicion de la ficha a sacar ({valid_range}): ").strip()
-            
-            if not from_pos.isdigit():
-                print("Error: La posicion debe ser un numero")
-                return None
-            
-            from_pos_num = int(from_pos)
-            if not (min_pos <= from_pos_num <= max_pos):
-                print(f"Error: La posicion debe estar entre {min_pos} y {max_pos}")
-                return None
-            
-            from_pos = from_pos_num - 1
-            
-            success = self.__game__.bear_off(from_pos)
-            if success:
-                print("✓ Ficha sacada exitosamente del tablero")
-                
-                if self.__game__.is_game_over():
-                    winner = self.__game__.get_winner()
-                    print(f"\n{'='*50}")
-                    print(f"¡¡¡ {winner.name.upper()} HA GANADO EL JUEGO !!!")
-                    print(f"{'='*50}")
-                    return "game_over"
-                    
-        except InvalidMoveError as e:
-            print(f"Movimiento invalido: {e}")
-        except NotYourTurnError as e:
-            print(f"Error de turno: {e}")
-        except ValueError:
-            print("Error: Ingresa un numero valido")
-        except Exception as e:
-            print(f"Error inesperado: {e}")
-        
-        return None
-    
-    def handle_end_turn(self):
-        try:
-            dice = self.__game__.get_dice()
-            available = dice.get_available_values()
-            
-            if available:
-                confirm = input(f"Aun tienes dados disponibles: {available}. ¿Terminar turno de todos modos? (s/n): ").strip().lower()
-                if confirm != 's':
-                    print("Turno no terminado")
-                    return
-            
-            success = self.__game__.end_turn()
-            if success:
-                print("✓ Turno terminado. Pasando al siguiente jugador...")
-        except NotYourTurnError as e:
-            print(f"Error: {e}")
-        except Exception as e:
-            print(f"Error inesperado: {e}")
-    
-    def show_help(self):
-        print("\nAYUDA - COMANDOS DISPONIBLES")
-        print("=" * 40)
-        print("r  - Tirar dados")
-        print("m  - Mover ficha")
-        print("b  - Entrar ficha desde la barra")
-        print("s  - Sacar ficha del tablero (bear off)")
-        print("e  - Terminar turno")
-        print("h  - Mostrar esta ayuda")
-        print("q  - Salir del juego")
-        print("c  - Limpiar pantalla")
-        print("=" * 40)
-        print()
-    
-    def show_game_status(self):
-        if not self.__game__:
-            return
-            
-        print("\nESTADO DEL JUEGO")
-        print("-" * 30)
-        state = self.__game__.get_game_state()
-        print(f"Jugador 1: {state['player1']['name']} ({state['player1']['color']})")
-        print(f"  - Fichas en tablero: {state['player1']['pieces']['on_board']}")
-        print(f"  - Fichas fuera: {state['player1']['pieces']['off_board']}")
-        print(f"Jugador 2: {state['player2']['name']} ({state['player2']['color']})")
-        print(f"  - Fichas en tablero: {state['player2']['pieces']['on_board']}")
-        print(f"  - Fichas fuera: {state['player2']['pieces']['off_board']}")
-        print()
-    
-    def main_menu(self):
-        while True:
-            self.clear_screen()
-            self.print_header()
-            
-            if self.__game__.is_game_over():
-                winner = self.__game__.get_winner()
-                print("=" * 60)
-                print(" " * 20 + "JUEGO TERMINADO!")
-                print(f" " * 15 + f"¡{winner.name} ES EL GANADOR!")
-                print("=" * 60)
-                print()
-                
-                play_again = input("¿Jugar otra vez? (s/n): ").strip().lower()
-                if play_again == 's':
-                    self.setup_game()
-                    continue
-                else:
-                    print("\n¡Gracias por jugar!")
-                    break
-            
-            self.display_game_state()
-            self.show_available_moves()
-            
-            print("\nACCIONES DISPONIBLES:")
-            print("r - Tirar dados | m - Mover | b - Entrar | s - Sacar | e - Terminar turno")
-            print("h - Ayuda | c - Limpiar | q - Salir")
-            print()
-            
-            choice = input("Selecciona una opcion: ").strip().lower()
-            
-            if choice == 'q':
-                confirm = input("¿Seguro que quieres salir? (s/n): ").strip().lower()
-                if confirm == 's':
-                    print("\n¡Gracias por jugar!")
-                    break
-            elif choice == 'h':
-                self.show_help()
-                input("\nPresiona Enter para continuar...")
-            elif choice == 'c':
-                continue
-            elif choice == 'r':
-                self.handle_dice_roll()
-                input("\nPresiona Enter para continuar...")
-            elif choice == 'm':
-                self.handle_move_piece()
-                input("\nPresiona Enter para continuar...")
-            elif choice == 'b':
-                self.handle_enter_from_bar()
-                input("\nPresiona Enter para continuar...")
-            elif choice == 's':
-                result = self.handle_bear_off()
-                if result == "game_over":
-                    input("\nPresiona Enter para continuar...")
-                    continue
-                input("\nPresiona Enter para continuar...")
-            elif choice == 'e':
-                self.handle_end_turn()
-                input("\nPresiona Enter para continuar...")
-            elif choice == 'i':
-                self.show_game_status()
-                input("\nPresiona Enter para continuar...")
-            else:
-                print("Opcion no valida. Presiona 'h' para ver la ayuda.")
-                input("\nPresiona Enter para continuar...")
-    
-    def run(self):
-        try:
-            self.__running__ = True
-            print("=" * 60)
-            print(" " * 15 + "Bienvenido a Backgammon CLI!")
-            print("=" * 60)
-            print()
-            
-            self.setup_game()
-            self.main_menu()
-            
-        except KeyboardInterrupt:
-            print("\n\n¡Juego interrumpido! Hasta luego.")
-        except Exception as e:
-            print(f"\nError critico: {e}")
-            import traceback
-            traceback.print_exc()
-        finally:
-            self.__running__ = False
+class TestCLI(unittest.TestCase):
+
+    def setUp(self):
+        self.mock_game = MagicMock(spec=Game)
+        self.mock_game.is_game_over.return_value = False
+        self.mock_player = MagicMock(spec=Player)
+        self.mock_player.name = "Jugador 1"
+        self.mock_player.color = "white"
+
+        self.mock_game.get_current_player.return_value = self.mock_player
+
+        self.cli = CLI()
+        self.cli.__game__ = self.mock_game
 
 
-def main():
-    cli = BackgammonCLI()
-    cli.run()
+        self.cli.clear_screen = MagicMock()
+        self.cli.print_header = MagicMock()
+        self.cli.print_board = MagicMock()
+        self.cli.show_available_moves = MagicMock()
 
 
-if __name__ == "__main__":
-    main()
+    @patch('builtins.print')
+    def test_handle_dice_roll_success(self, mock_print):
+        self.cli.__game__.roll_dice.return_value = (3, 4)
+        self.cli.handle_dice_roll()
+        mock_print.assert_any_call("\nJugador 1 tiro: (3, 4)")
+
+    @patch('builtins.print')
+    def test_handle_dice_roll_not_your_turn(self, mock_print):
+        self.cli.__game__.roll_dice.side_effect = NotYourTurnError("No es tu turno")
+        self.cli.handle_dice_roll()
+        mock_print.assert_any_call("Error: No es tu turno")
+
+
+    @patch('builtins.input', side_effect=["1", "3"])
+    @patch('builtins.print')
+    def test_handle_move_piece_success(self, mock_print, mock_input):
+        self.cli.__game__.move_piece.return_value = True
+        self.cli.handle_move_piece()
+        self.cli.__game__.move_piece.assert_called_once_with(0, 2)
+        mock_print.assert_any_call("✓ Movimiento realizado exitosamente")
+
+    @patch('builtins.input', side_effect=["a", "3"])
+    @patch('builtins.print')
+    def test_handle_move_piece_invalid_number(self, mock_print, mock_input):
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Error: Las posiciones deben ser numeros")
+
+    @patch('builtins.input', side_effect=["1", "30"])
+    @patch('builtins.print')
+    def test_handle_move_piece_out_of_range(self, mock_print, mock_input):
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Error: Las posiciones deben estar entre 1 y 24")
+
+    @patch('builtins.input', side_effect=["1", "2"])
+    @patch('builtins.print')
+    def test_handle_move_piece_invalid_move(self, mock_print, mock_input):
+        self.cli.__game__.move_piece.side_effect = InvalidMoveError("Movimiento no permitido")
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Movimiento invalido: Movimiento no permitido")
+
+
+    @patch('builtins.input', side_effect=["20"])
+    @patch('builtins.print')
+    def test_handle_enter_from_bar_success_white(self, mock_print, mock_input):
+        self.mock_player.color = "white"
+        self.mock_game.get_board.return_value.get_state.return_value = {'bar': {'white': 1, 'black': 0}}
+        self.cli.__game__.enter_from_bar.return_value = True
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("✓ Ficha entro exitosamente desde la barra")
+
+    @patch('builtins.input', side_effect=["a"])
+    @patch('builtins.print')
+    def test_handle_enter_from_bar_invalid_number(self, mock_print, mock_input):
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error: La posicion debe ser un numero")
+
+    @patch('builtins.input', side_effect=["25"])
+    @patch('builtins.print')
+    def test_handle_enter_from_bar_out_of_range(self, mock_print, mock_input):
+        self.mock_player.color = "white"
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error: La posicion debe estar entre 19 y 24")
+
+
+    @patch('builtins.input', side_effect=["24"])
+    @patch('builtins.print')
+    def test_handle_bear_off_success(self, mock_print, mock_input):
+        self.mock_player.color = "white"
+        self.cli.__game__.bear_off.return_value = True
+        self.cli.__game__.is_game_over.return_value = False
+        self.cli.handle_bear_off()
+        mock_print.assert_any_call("✓ Ficha sacada exitosamente del tablero")
+
+    @patch('builtins.input', side_effect=["x"])
+    @patch('builtins.print')
+    def test_handle_bear_off_invalid_input(self, mock_print, mock_input):
+        self.cli.handle_bear_off()
+        mock_print.assert_any_call("Error: La posicion debe ser un numero")
+
+
+    @patch('builtins.input', side_effect=["s"])
+    @patch('builtins.print')
+    def test_handle_end_turn_success(self, mock_print, mock_input):
+        mock_dice = MagicMock()
+        mock_dice.get_available_values.return_value = []
+        self.cli.__game__.get_dice.return_value = mock_dice
+        self.cli.__game__.end_turn.return_value = True
+        self.cli.handle_end_turn()
+        mock_print.assert_any_call("✓ Turno terminado. Pasando al siguiente jugador...")
+
+    @patch('builtins.input', side_effect=["n"])
+    @patch('builtins.print')
+    def test_handle_end_turn_not_confirmed(self, mock_print, mock_input):
+        mock_dice = MagicMock()
+        mock_dice.get_available_values.return_value = [3, 4]
+        self.cli.__game__.get_dice.return_value = mock_dice
+        self.cli.handle_end_turn()
+        mock_print.assert_any_call("Turno no terminado")
+
+
+    @patch('builtins.print')
+    def test_show_help_prints_commands(self, mock_print):
+        self.cli.show_help()
+        mock_print.assert_any_call("r  - Tirar dados")
+        mock_print.assert_any_call("q  - Salir del juego")
+
+
+    @patch('builtins.print')
+    def test_show_game_status(self, mock_print):
+        fake_state = {
+            'player1': {'name': 'P1', 'color': 'white', 'pieces': {'on_board': 10, 'off_board': 5}},
+            'player2': {'name': 'P2', 'color': 'black', 'pieces': {'on_board': 12, 'off_board': 3}}
+        }
+        self.cli.__game__.get_game_state.return_value = fake_state
+        self.cli.show_game_status()
+        mock_print.assert_any_call(f"Jugador 1: P1 (white)")
+        mock_print.assert_any_call(f"Jugador 2: P2 (black)")
+
+    class TestCLIExhaustive(unittest.TestCase):
+
+        def setUp(self):
+            self.cli = CLI()
+            self.mock_game = MagicMock()
+
+            self.mock_game.is_game_over.return_value = False
+            self.cli.__game__ = self.mock_game
+
+            self.cli.clear_screen = MagicMock()
+            self.cli.print_header = MagicMock()
+            self.cli.print_board = MagicMock()
+            self.cli.show_available_moves = MagicMock()
+
+    @patch('builtins.print')
+    def test_main_menu_game_over_play_again_yes(self, mock_print):
+
+        winner = MagicMock()
+        winner.name = 'Winner'
+        self.mock_game.get_winner.return_value = winner
+
+
+        inputs = ['s', 'q', 's']
+
+
+        def fake_setup():
+            self.cli.__game__ = self.mock_game
+
+        self.cli.setup_game = fake_setup
+
+
+        self.mock_game.is_game_over.side_effect = [True, False]
+
+        with patch('builtins.input', side_effect=inputs):
+            self.cli.main_menu()
+
+        mock_print.assert_any_call("\n¡Gracias por jugar!")
+
+    @patch('builtins.print')
+    def test_main_menu_many_choices_sequence(self, mock_print):
+        self.cli.handle_dice_roll = MagicMock()
+        self.cli.handle_move_piece = MagicMock()
+        self.cli.handle_enter_from_bar = MagicMock()
+        self.cli.handle_bear_off = MagicMock()
+        self.cli.handle_end_turn = MagicMock()
+        self.cli.show_game_status = MagicMock()
+        self.cli.show_help = MagicMock()
+
+ 
+        seq = [
+            'r', '',
+            'm', '',
+            'b', '',
+            's', '',
+            'e', '',
+            'i', '',
+            'h', '',
+            'c',
+            'z', '',  
+            'q', 's'  
+        ]
+
+        with patch('builtins.input', side_effect=seq):
+
+            self.mock_game.is_game_over.return_value = False
+            self.cli.main_menu()
+
+ 
+        self.cli.handle_dice_roll.assert_called()
+        self.cli.handle_move_piece.assert_called()
+        self.cli.handle_enter_from_bar.assert_called()
+        self.cli.handle_bear_off.assert_called()
+        self.cli.handle_end_turn.assert_called()
+        self.cli.show_game_status.assert_called()
+        self.cli.show_help.assert_called()
+        mock_print.assert_any_call("Opcion no valida. Presiona 'h' para ver la ayuda.")
+
+    @patch('builtins.print')
+    def test_run_handles_keyboardinterrupt_and_finally(self, mock_print):
+ 
+        def raises_keyboard():
+            raise KeyboardInterrupt()
+
+        self.cli.setup_game = raises_keyboard
+
+        self.cli.run()
+        self.assertFalse(self.cli.__running__)
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['1', '2'])
+    def test_handle_move_piece_move_raises_valueerror(self, mock_input, mock_print):
+
+        self.cli.__game__.move_piece.side_effect = ValueError()
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Error: Ingresa numeros validos")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['Alice', 'Bob', ''])
+    def test_setup_game_with_names(self, mock_input, mock_print):
+
+        with patch('cli.cli.Game', return_value=self.mock_game):
+            self.mock_game.start = MagicMock()
+            cli_real = CLI()
+            cli_real.clear_screen = MagicMock()
+            cli_real.setup_game()
+            self.assertIs(cli_real.__game__, self.mock_game)
+
+            self.mock_game.start.assert_called()
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['3'])
+    def test_handle_enter_from_bar_black(self, mock_input, mock_print):
+
+        player = MagicMock()
+        player.color = 'black'
+        self.cli.__game__.get_current_player.return_value = player
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 0, 'black': 1}}
+        self.cli.__game__.get_board.return_value = board
+        self.cli.__game__.enter_from_bar.return_value = True
+
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("✓ Ficha entro exitosamente desde la barra")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['1'])
+    def test_handle_bear_off_black_game_over_prints_winner(self, mock_input, mock_print):
+        player = MagicMock()
+        player.color = 'black'
+        self.cli.__game__.get_current_player.return_value = player
+
+        self.cli.__game__.bear_off.return_value = True
+        self.cli.__game__.is_game_over.return_value = True
+        winner = MagicMock()
+        winner.name = 'victor'
+        self.cli.__game__.get_winner.return_value = winner
+
+        result = self.cli.handle_bear_off()
+        self.assertEqual(result, 'game_over')
+
+        mock_print.assert_any_call(f"¡¡¡ {winner.name.upper()} HA GANADO EL JUEGO !!!")
+
+    @patch('builtins.print')
+    def test_handle_dice_roll_none_and_exception(self, mock_print):
+  
+        self.cli.__game__.roll_dice.return_value = None
+        self.cli.handle_dice_roll()
+
+
+        self.cli.__game__.roll_dice.side_effect = Exception('boom')
+        self.cli.handle_dice_roll()
+        mock_print.assert_any_call('Error inesperado: boom')
+
+    @patch('builtins.print')
+    def test_run_handles_generic_exception(self, mock_print):
+
+        def raises_exc():
+            raise Exception('boom')
+
+        self.cli.setup_game = raises_exc
+        import traceback
+        traceback.print_exc = MagicMock()
+
+        self.cli.run()
+        self.assertFalse(self.cli.__running__)
+        mock_print.assert_any_call('\nError critico: boom')
+
+    class TestCLIMainMenuLoop(unittest.TestCase):
+        def setUp(self):
+            self.cli = CLI()
+            gm = MagicMock()
+            gm.is_game_over.return_value = False
+            gm.get_winner.return_value = MagicMock(name='W')
+            self.cli.__game__ = gm
+
+            self.cli.clear_screen = MagicMock()
+            self.cli.print_header = MagicMock()
+            self.cli.print_board = MagicMock()
+            self.cli.print_game_info = MagicMock()
+
+
+            self.cli.handle_dice_roll = MagicMock()
+            self.cli.handle_move_piece = MagicMock()
+            self.cli.handle_enter_from_bar = MagicMock()
+            self.cli.handle_bear_off = MagicMock(return_value=None)
+            self.cli.handle_end_turn = MagicMock()
+            self.cli.show_game_status = MagicMock()
+
+        @patch('builtins.input')
+        @patch('builtins.print')
+        def test_main_menu_exercise_many_paths(self, mock_print, mock_input):
+
+            seq = []
+            for ch in ['h', 'c', 'r', 'm', 'b', 's', 'e', 'i', 'x', 'q']:
+                seq.append(ch)
+                if ch in ['h', 'r', 'm', 'b', 's', 'e', 'i', 'x']:
+                    seq.append('')
+            seq.append('s')
+
+            mock_input.side_effect = seq
+
+            self.cli.main_menu()
+
+            self.cli.handle_dice_roll.assert_called()
+            self.cli.handle_move_piece.assert_called()
+            self.cli.handle_enter_from_bar.assert_called()
+            self.cli.handle_end_turn.assert_called()
+
+class TestCLIMore(unittest.TestCase):
+
+    def setUp(self):
+        self.mock_game = MagicMock()
+        self.mock_game.is_game_over.return_value = False
+        self.mock_player = MagicMock()
+        self.mock_player.name = "Jugador 1"
+        self.mock_player.color = "white"
+
+        self.mock_game.get_current_player.return_value = self.mock_player
+
+        self.cli = CLI()
+        self.cli.__game__ = self.mock_game
+
+        self.cli.clear_screen = MagicMock()
+        self.cli.print_header = MagicMock()
+        self.cli.print_board = MagicMock()
+        self.cli.show_available_moves = MagicMock()
+
+    @patch('builtins.print')
+    def test_display_game_state_calls_board(self, mock_print):
+        mock_board = MagicMock()
+        mock_board.display_board_console = MagicMock()
+        self.mock_game.get_board.return_value = mock_board
+
+        Player.game_pieces = {'white': {'on_board': 15, 'off_board': 0}, 'black': {'on_board': 15, 'off_board': 0}}
+
+        self.cli.display_game_state()
+        mock_board.display_board_console.assert_called_once()
+
+    @patch('builtins.print')
+    def test_show_available_moves_no_values_with_bar_and_bear_off(self, mock_print):
+        mock_dice = MagicMock()
+        mock_dice.get_available_values.return_value = []
+        self.mock_game.get_dice.return_value = mock_dice
+        self.mock_game.must_enter_from_bar.return_value = True
+        self.mock_game.can_bear_off.return_value = True
+        self.mock_game.get_board.return_value.get_state.return_value = {'bar': {'white': 2, 'black': 0}}
+
+        self.cli.show_available_moves()
+        mock_print.assert_any_call("No hay dados disponibles - termina tu turno")
+        mock_print.assert_any_call("ATENCION: Tienes 2 ficha(s) en la barra que deben entrar primero")
+        mock_print.assert_any_call("Puedes comenzar a sacar fichas del tablero")
+
+    @patch('builtins.print')
+    def test_handle_dice_roll_double_prints_double(self, mock_print):
+        self.mock_game.roll_dice.return_value = (4, 4)
+        mock_dice = MagicMock()
+        mock_dice.is_double.return_value = True
+        self.mock_game.get_dice.return_value = mock_dice
+
+        self.cli.handle_dice_roll()
+        mock_print.assert_any_call("¡DOBLE! Tienes 4 movimientos disponibles")
+
+    @patch('builtins.input', side_effect=["1", "2"])
+    @patch('builtins.print')
+    def test_handle_move_piece_capture_message(self, mock_print, mock_input):
+        self.mock_game.move_piece.return_value = True
+        board_state = {'bar': {'white': 0, 'black': 1}}
+        self.mock_game.get_board.return_value.get_state.return_value = board_state
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("¡Capturaste una ficha enemiga!")
+
+    @patch('builtins.input', side_effect=["20"])
+    @patch('builtins.print')
+    def test_handle_enter_from_bar_exceptions(self, mock_print, mock_input):
+        self.mock_game.enter_from_bar.side_effect = NoPiecesInBarError("No hay fichas en la barra")
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error: No hay fichas en la barra")
+
+        self.mock_game.enter_from_bar.side_effect = InvalidMoveError("Movimiento invalido")
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Movimiento invalido: Movimiento invalido")
+
+        self.mock_game.enter_from_bar.side_effect = NotYourTurnError("No es tu turno")
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error de turno: No es tu turno")
+
+    @patch('builtins.input', side_effect=["24"])
+    @patch('builtins.print')
+    def test_handle_bear_off_game_over(self, mock_print, mock_input):
+        self.mock_game.bear_off.return_value = True
+        self.mock_game.is_game_over.return_value = True
+        winner = MagicMock()
+        winner.name = "Ganador"
+        self.mock_game.get_winner.return_value = winner
+
+        result = self.cli.handle_bear_off()
+        self.assertEqual(result, "game_over")
+        mock_print.assert_any_call("¡¡¡ GANADOR HA GANADO EL JUEGO !!!")
+
+    @patch('builtins.input', side_effect=["q", "s"])
+    @patch('builtins.print')
+    def test_main_menu_quit_confirm(self, mock_print, mock_input):
+        self.mock_game.is_game_over.return_value = False
+        self.cli.main_menu()
+        mock_print.assert_any_call("\n¡Gracias por jugar!")
+
+    @patch('builtins.input', side_effect=["z", "q", "s"])
+    @patch('builtins.print')
+    def test_main_menu_invalid_option_then_quit(self, mock_print, mock_input):
+        self.mock_game.is_game_over.return_value = False
+        self.cli.main_menu()
+        mock_print.assert_any_call("Opcion no valida. Presiona 'h' para ver la ayuda.")
+
+    @patch('builtins.print')
+    def test_print_header_and_print_dice(self, mock_print):
+        cli_real = CLI()
+        cli_real.clear_screen = MagicMock()
+        cli_real.__game__ = self.mock_game
+
+
+        cli_real.print_header()
+        mock_print.assert_any_call("" + "=" * 60)
+
+        self.mock_game.get_dice.return_value = (1, 2)
+        cli_real.print_dice()
+        mock_print.assert_any_call("Dados: (1, 2)")
+
+    @patch('builtins.input', side_effect=["", "", ""]) 
+    @patch('builtins.print')
+    def test_setup_game_defaults(self, mock_print, mock_input):
+        with patch('cli.cli.Game', return_value=self.mock_game):
+            self.mock_game.start = MagicMock()
+            cli_real = CLI()
+            cli_real.clear_screen = MagicMock()
+            cli_real.setup_game()
+            self.assertIs(cli_real.__game__, self.mock_game)
+
+    @patch('builtins.print')
+    def test_handle_end_turn_not_your_turn(self, mock_print):
+        self.mock_game.get_dice.return_value.get_available_values.return_value = []
+        self.mock_game.end_turn.side_effect = NotYourTurnError("No es tu turno")
+        self.cli.handle_end_turn()
+        mock_print.assert_any_call("Error: No es tu turno")
+
+    @patch('builtins.input', side_effect=["h", "", "q", "s"])
+    @patch('builtins.print')
+    def test_main_menu_help_then_quit(self, mock_print, mock_input):
+        self.mock_game.is_game_over.return_value = False
+        cli_real = CLI()
+        cli_real.clear_screen = MagicMock()
+        cli_real.print_board = MagicMock()
+        cli_real.__game__ = self.mock_game
+        cli_real.show_available_moves = MagicMock()
+        cli_real.main_menu()
+        mock_print.assert_any_call("r  - Tirar dados")
+
+
+if __name__ == '__main__':
+    unittest.main()
+import unittest
+from unittest.mock import MagicMock, patch
+
+from cli.cli import CLI
+from core.game import NotYourTurnError
+
+
+class TestCLIMore(unittest.TestCase):
+    def setUp(self):
+        self.cli = CLI()
+        self.mock_game = MagicMock()
+        self.cli.__game__ = self.mock_game
+
+    @patch('builtins.print')
+    def test_display_game_state_prints(self, mock_print):
+        player = MagicMock()
+        player.name = 'P1'
+        player.color = 'white'
+
+        dice = MagicMock()
+        board = MagicMock()
+        board.display_board_console = MagicMock()
+
+        self.mock_game.get_current_player.return_value = player
+        self.mock_game.get_dice.return_value = dice
+        self.mock_game.get_board.return_value = board
+
+        self.cli.display_game_state()
+
+        board.display_board_console.assert_called_once()
+
+    @patch('builtins.print')
+    def test_show_available_moves_and_warnings(self, mock_print):
+        dice = MagicMock()
+        dice.get_available_values.return_value = [1]
+        self.mock_game.get_dice.return_value = dice
+        self.mock_game.must_enter_from_bar.return_value = True
+        self.mock_game.can_bear_off.return_value = True
+
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 2, 'black': 0}}
+        self.mock_game.get_board.return_value = board
+
+        self.mock_game.get_current_player.return_value = MagicMock(color='white')
+
+        self.cli.show_available_moves()
+
+        mock_print.assert_any_call("Dados disponibles: [1]")
+        mock_print.assert_any_call("ATENCION: Tienes 2 ficha(s) en la barra que deben entrar primero")
+        mock_print.assert_any_call("Puedes comenzar a sacar fichas del tablero")
+
+    @patch('builtins.print')
+    def test_handle_dice_roll_success_and_double(self, mock_print):
+        player = MagicMock()
+        player.name = 'P1'
+        player.color = 'white'
+        self.mock_game.get_current_player.return_value = player
+
+        self.mock_game.roll_dice.return_value = (2, 2)
+        dice = MagicMock()
+        dice.is_double.return_value = True
+        self.mock_game.get_dice.return_value = dice
+
+        self.cli.handle_dice_roll()
+
+        mock_print.assert_any_call(f"\n{player.name} tiro: (2, 2)")
+        mock_print.assert_any_call("¡DOBLE! Tienes 4 movimientos disponibles")
+
+    @patch('builtins.print')
+    def test_handle_dice_roll_not_your_turn(self, mock_print):
+        self.mock_game.roll_dice.side_effect = NotYourTurnError("No es tu turno")
+        self.cli.handle_dice_roll()
+        mock_print.assert_any_call("Error: No es tu turno")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['a', 'b'])
+    def test_handle_move_piece_invalid_input(self, mock_input, mock_print):
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Error: Las posiciones deben ser numeros")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['0', '25'])
+    def test_handle_move_piece_out_of_range(self, mock_input, mock_print):
+        self.cli.handle_move_piece()
+        mock_print.assert_any_call("Error: Las posiciones deben estar entre 1 y 24")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['1', '2'])
+    def test_handle_move_piece_success_capture(self, mock_input, mock_print):
+        player = MagicMock()
+        player.color = 'white'
+        player.name = 'P1'
+        self.mock_game.get_current_player.return_value = player
+
+        self.mock_game.move_piece.return_value = True
+
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 0, 'black': 1}}
+        self.mock_game.get_board.return_value = board
+
+        self.cli.handle_move_piece()
+
+        mock_print.assert_any_call("✓ Movimiento realizado exitosamente")
+        mock_print.assert_any_call("¡Capturaste una ficha enemiga!")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['x'])
+    def test_handle_enter_from_bar_invalid_input(self, mock_input, mock_print):
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error: La posicion debe ser un numero")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['1'])
+    def test_handle_enter_from_bar_out_of_range(self, mock_input, mock_print):
+        player = MagicMock()
+        player.color = 'white'
+        self.mock_game.get_current_player.return_value = player
+
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 1, 'black': 0}}
+        self.mock_game.get_board.return_value = board
+
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("Error: La posicion debe estar entre 19 y 24")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['19'])
+    def test_handle_enter_from_bar_success(self, mock_input, mock_print):
+        player = MagicMock()
+        player.color = 'white'
+        self.mock_game.get_current_player.return_value = player
+
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 1, 'black': 0}}
+        self.mock_game.get_board.return_value = board
+
+        self.mock_game.enter_from_bar.return_value = True
+
+        self.cli.handle_enter_from_bar()
+        mock_print.assert_any_call("✓ Ficha entro exitosamente desde la barra")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['19'])
+    def test_handle_bear_off_game_over(self, mock_input, mock_print):
+        player = MagicMock()
+        player.color = 'white'
+        self.mock_game.get_current_player.return_value = player
+
+        self.mock_game.bear_off.return_value = True
+        self.mock_game.is_game_over.return_value = True
+        winner = MagicMock()
+        winner.name = 'Winner'
+        self.mock_game.get_winner.return_value = winner
+
+        result = self.cli.handle_bear_off()
+        self.assertEqual(result, "game_over")
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['n'])
+    def test_handle_end_turn_abort_when_dice_available(self, mock_input, mock_print):
+        dice = MagicMock()
+        dice.get_available_values.return_value = [1]
+        self.mock_game.get_dice.return_value = dice
+
+        self.cli.handle_end_turn()
+        self.mock_game.end_turn.assert_not_called()
+
+    @patch('builtins.print')
+    @patch('builtins.input', side_effect=['s'])
+    def test_handle_end_turn_confirm(self, mock_input, mock_print):
+        dice = MagicMock()
+        dice.get_available_values.return_value = [1]
+        self.mock_game.get_dice.return_value = dice
+        self.mock_game.end_turn.return_value = True
+
+        self.cli.handle_end_turn()
+        self.mock_game.end_turn.assert_called()
+
+    @patch('builtins.print')
+    def test_show_help_and_status(self, mock_print):
+        self.cli.show_help()
+        mock_print.assert_any_call("r  - Tirar dados")
+
+        state = {
+            'player1': {'name': 'A', 'color': 'white', 'pieces': {'on_board': 5, 'off_board': 2}},
+            'player2': {'name': 'B', 'color': 'black', 'pieces': {'on_board': 10, 'off_board': 0}}
+        }
+        self.mock_game.get_game_state.return_value = state
+        self.cli.show_game_status()
+        mock_print.assert_any_call(f"Jugador 1: {state['player1']['name']} ({state['player1']['color']})")
+
+class TestCLIExtraPaths(unittest.TestCase):
+
+    @patch('builtins.print')
+    def test_setup_game_with_empty_names_uses_defaults(self, mock_print):
+        cli = CLI()
+        with patch('cli.cli.Game') as MockGame:
+            mock_game = MagicMock()
+            mock_game.get_players.return_value = ['Jugador 1', 'Jugador 2']
+            MockGame.return_value = mock_game
+
+            with patch('builtins.input', side_effect=['', '']):
+                cli.setup_game()
+
+        MockGame.assert_called_once()
+        mock_game.start.assert_called()
+
+    @patch('builtins.print')
+    def test_show_available_moves_various_warnings(self, mock_print):
+        cli = CLI()
+        gm = MagicMock()
+        dice = MagicMock()
+        dice.get_available_values.return_value = [3]
+        gm.get_dice.return_value = dice
+        gm.must_enter_from_bar.return_value = True
+        gm.can_bear_off.return_value = True
+        mock_player = MagicMock()
+        mock_player.color = 'white'
+        gm.get_current_player.return_value = mock_player
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 2, 'black': 0}}
+        gm.get_board.return_value = board
+        cli.__game__ = gm
+
+        cli.show_available_moves()
+
+        mock_print.assert_any_call('Dados disponibles: [3]')
+        mock_print.assert_any_call('ATENCION: Tienes 2 ficha(s) en la barra que deben entrar primero')
+        mock_print.assert_any_call('Puedes comenzar a sacar fichas del tablero')
+
+    @patch('builtins.print')
+    def test_handle_move_piece_capture_message(self, mock_print):
+        cli = CLI()
+        gm = MagicMock()
+        gm.move_piece.return_value = True
+        mock_player = MagicMock()
+        mock_player.color = 'white'
+        gm.get_current_player.return_value = mock_player
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 0, 'black': 1}}
+        gm.get_board.return_value = board
+        cli.__game__ = gm
+
+        with patch('builtins.input', side_effect=['1', '2']):
+            cli.handle_move_piece()
+
+        mock_print.assert_any_call('¡Capturaste una ficha enemiga!')
+
+    @patch('builtins.print')
+    def test_handle_enter_from_bar_raises_and_prints(self, mock_print):
+        cli = CLI()
+        gm = MagicMock()
+        mock_player = MagicMock()
+        mock_player.color = 'white'
+        gm.get_current_player.return_value = mock_player
+        board = MagicMock()
+        board.get_state.return_value = {'bar': {'white': 1, 'black': 0}}
+        gm.get_board.return_value = board
+        gm.enter_from_bar.side_effect = Exception('boom')
+        cli.__game__ = gm
+
+        with patch('builtins.input', side_effect=['19']):
+            cli.handle_enter_from_bar()
+
+        mock_print.assert_any_call('Error inesperado: boom')
+
+    @patch('builtins.print')
+    def test_handle_bear_off_game_over_prints_winner(self, mock_print):
+        cli = CLI()
+        gm = MagicMock()
+        mock_player = MagicMock()
+        mock_player.color = 'white'
+        gm.get_current_player.return_value = mock_player
+        gm.bear_off.return_value = True
+        gm.is_game_over.return_value = True
+        winner = MagicMock()
+        winner.name = 'Campeon'
+        gm.get_winner.return_value = winner
+        cli.__game__ = gm
+
+        with patch('builtins.input', side_effect=['24']):
+            res = cli.handle_bear_off()
+
+        mock_print.assert_any_call("¡¡¡ CAMPEON HA GANADO EL JUEGO !!!")
+        self.assertEqual(res, 'game_over')
+
+    @patch('builtins.print')
+    def test_main_menu_calls_show_game_status_on_i(self, mock_print):
+        cli = CLI()
+        gm = MagicMock()
+        gm.is_game_over.return_value = False
+        cli.__game__ = gm
+
+        cli.clear_screen = MagicMock()
+        cli.print_header = MagicMock()
+        cli.print_board = MagicMock()
+        cli.print_game_info = MagicMock()
+        cli.show_game_status = MagicMock()
+
+        seq = ['i', 'q', 's']
+        with patch('builtins.input', side_effect=seq):
+            cli.main_menu()
+
+        cli.show_game_status.assert_called()
+
+
+
+
+if __name__ == '__main__':
+    unittest.main()

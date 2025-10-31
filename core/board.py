@@ -152,30 +152,46 @@ class Board:
         
         return False
     
-    def move_piece(self, from_pos, to_pos, color):
+    def move_piece(self, *args):
+        """
+        Supports two call signatures for backwards compatibility:
+        - move_piece(color, from_pos, to_pos)
+        - move_piece(from_pos, to_pos, color)
+        """
+        if len(args) != 3:
+            return False
+
+  
+        a, b, c = args
+        if isinstance(a, int) and isinstance(b, int) and isinstance(c, str):
+            from_pos, to_pos, color = a, b, c
+        else:
+ 
+            color, from_pos, to_pos = a, b, c
+
         if not self.is_valid_position(from_pos) or not self.is_valid_position(to_pos):
             return False
-        
+
         if self.__pos__[from_pos] is None or self.__pos__[from_pos][0] != color:
             return False
-        
+
         if not self.can_place_piece(to_pos, color):
             return False
-        
+
         if self.__pos__[to_pos] is not None and self.__pos__[to_pos][0] != color:
             enemy_color = self.__pos__[to_pos][0]
             self.__bar__[enemy_color] += 1
             self.__pos__[to_pos] = None
-        
+
         self.__pos__[from_pos][1] -= 1
         if self.__pos__[from_pos][1] == 0:
             self.__pos__[from_pos] = None
-        
+
         if self.__pos__[to_pos] is None:
             self.__pos__[to_pos] = [color, 1]
         else:
             self.__pos__[to_pos][1] += 1
-        
+
         return True
     
     def bear_off(self, pos, color):
@@ -251,7 +267,7 @@ class Board:
     
     def get_state(self):
         return {
-            "positions": self.__pos__.copy(),
+            "positions": [pos.copy() if pos else None for pos in self.__pos__],
             "bar": self.__bar__.copy(),
             "off_board": self.__off_board__.copy()
         }
@@ -262,9 +278,48 @@ class Board:
         self.__off_board__ = {"white": 0, "black": 0}
         self.setup_initial_position()
 
+    def is_target_valid(self, to_pos, color):
+        if not (0 <= to_pos <= 23):
+            return False
+            
+        if self.__pos__[to_pos] is not None:
+            enemy_color = "black" if color == "white" else "white"
+            if self.__pos__[to_pos][0] == enemy_color and self.__pos__[to_pos][1] > 1:
+                return False
+        
+        return True
+
+    def is_re_entry_target_valid(self, to_pos, color):
+        return self.is_target_valid(to_pos, color)
+
+    def is_valid_move(self, color, from_point, to_point):
+        if not isinstance(to_point, int) or not (0 <= to_point <= 23):
+            return False
+        
+        if from_point == 'bar' or from_point == f'bar_{color}':
+            if self.__bar__[color] == 0:
+                return False
+            if color == "white" and not (18 <= to_point <= 23):
+                return False
+            if color == "black" and not (0 <= to_point <= 5):
+                return False
+            return self.is_target_valid(to_point, color)
+        
+        if not isinstance(from_point, int) or not (0 <= from_point <= 23):
+            return False
+        
+        if self.__pos__[from_point] is None or self.__pos__[from_point][0] != color:
+            return False
+        
+        if color == "white":
+            if to_point <= from_point:
+                return False
+        else:
+            if to_point >= from_point:
+                return False
+        
+        return self.is_target_valid(to_point, color)
+
 
 if __name__ == "__main__":
     board = Board()
-
-    
-

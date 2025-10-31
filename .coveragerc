@@ -1,0 +1,17 @@
+[run]
+# Measure coverage for application packages only (don't include tests as source)
+source =
+    core
+    cli
+
+[report]
+# Exclude virtual env, tests, and package init files from report
+omit =
+    venv/*
+    tests/*
+    */__init__.py
+
+
+
+
+    

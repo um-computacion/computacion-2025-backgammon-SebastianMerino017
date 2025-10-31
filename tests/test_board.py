@@ -1,5 +1,6 @@
 import unittest
 from core.board import Board
+from unittest.mock import patch
 
 class TestBoard(unittest.TestCase):
     
@@ -330,9 +331,209 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(self.board.__bar__["white"], 0)
         self.assertEqual(self.board.__off_board__["black"], 0)
 
+    def setUp(self):
+        self.board = Board()
+
+    def test_is_valid_position_and_get_position_info(self):
+        self.assertTrue(self.board.is_valid_position(0))
+        self.assertTrue(self.board.is_valid_position(23))
+        self.assertFalse(self.board.is_valid_position(24))
+        self.assertIsNone(self.board.get_position_info(24))
+
+    def test_can_place_piece_various(self):
+        self.assertTrue(self.board.can_place_piece(1, 'white'))
+
+        self.board.__pos__[1] = ['white', 2]
+        self.assertTrue(self.board.can_place_piece(1, 'white'))
+
+        self.board.__pos__[2] = ['black', 1]
+        self.assertTrue(self.board.can_place_piece(2, 'white'))
+
+        self.board.__pos__[3] = ['black', 2]
+        self.assertFalse(self.board.can_place_piece(3, 'white'))
+
+    def test_move_piece_invalid_cases(self):
+        self.assertFalse(self.board.move_piece('white', -1, 5))
+        self.board.__pos__[4] = None
+        self.assertFalse(self.board.move_piece('white', 4, 5))
+
+    def test_move_piece_capture_and_remove_from(self):
+        self.board.__pos__[0] = ['white', 1]
+        self.board.__pos__[1] = ['black', 1]
+        before_bar_black = self.board.__bar__['black']
+
+        ok = self.board.move_piece('white', 0, 1)
+        self.assertTrue(ok)
+        self.assertEqual(self.board.__bar__['black'], before_bar_black + 1)
+        self.assertEqual(self.board.__pos__[1][0], 'white')
+
+    def test_move_piece_increment_on_target(self):
+        self.board.__pos__[6] = ['white', 2]
+        self.board.__pos__[7] = ['white', 3]
+        ok = self.board.move_piece('white', 6, 7)
+        self.assertTrue(ok)
+        self.assertEqual(self.board.__pos__[7][1], 4)
+
+    def test_bear_off_wrong_and_success(self):
+        self.board.__pos__[0] = ['black', 1]
+        self.assertFalse(self.board.bear_off(0, 'white'))
+
+        self.board.__pos__[10] = ['white', 1]
+        self.assertFalse(self.board.bear_off(10, 'white'))
+
+        self.board.__pos__[23] = ['white', 1]
+        before = self.board.__off_board__['white']
+        ok = self.board.bear_off(23, 'white')
+        self.assertTrue(ok)
+        self.assertEqual(self.board.__off_board__['white'], before + 1)
+
+    def test_enter_from_bar_cases(self):
+        self.board.__bar__['white'] = 0
+        self.assertFalse(self.board.enter_from_bar(19, 'white'))
+
+        self.board.__bar__['white'] = 1
+        self.board.__pos__[19] = ['black', 2]
+        self.assertFalse(self.board.enter_from_bar(19, 'white'))
+
+        self.board.__pos__[10] = None
+        self.assertFalse(self.board.enter_from_bar(10, 'white'))
+
+        self.board.__pos__[18] = ['black', 1]
+        self.board.__bar__['white'] = 1
+        before_black_bar = self.board.__bar__['black']
+        ok = self.board.enter_from_bar(18, 'white')
+        self.assertTrue(ok)
+        self.assertEqual(self.board.__bar__['black'], before_black_bar + 1)
+
+    def test_count_and_has_pieces_in_home_board(self):
+        self.board.reset_board()
+        self.board.__bar__['white'] = 2
+        c = self.board.count_pieces('white')
+        self.assertTrue(c >= 2)
+
+        self.board.__pos__[0] = ['white', 1]
+        self.board.__bar__['white'] = 0
+        self.assertFalse(self.board.has_pieces_in_home_board('white'))
+
+        self.board.reset_board()
+        for i in range(18):
+            self.board.__pos__[i] = None
+        self.board.__bar__['white'] = 0
+        self.assertTrue(self.board.has_pieces_in_home_board('white'))
+
+    def test_get_state_is_copy_and_reset_board(self):
+        st = self.board.get_state()
+        st['positions'][0] = None
+        st2 = self.board.get_state()
+        self.assertIsNotNone(st2['positions'][0])
+
+        self.board.__pos__[0] = None
+        self.board.reset_board()
+        self.assertIsNotNone(self.board.__pos__[0])
+
+    def test_is_target_valid_and_reentry(self):
+        self.assertFalse(self.board.is_target_valid(30, 'white'))
+
+        self.board.__pos__[4] = ['black', 3]
+        self.assertFalse(self.board.is_target_valid(4, 'white'))
+
+        self.board.__pos__[5] = None
+        self.assertTrue(self.board.is_target_valid(5, 'white'))
+        self.assertTrue(self.board.is_re_entry_target_valid(5, 'white'))
+
+    def test_is_valid_move_various(self):
+        self.assertFalse(self.board.is_valid_move('white', 0, 'x'))
+
+        self.board.__bar__['white'] = 0
+        self.assertFalse(self.board.is_valid_move('white', 'bar', 19))
+
+        self.board.__bar__['white'] = 1
+        self.assertFalse(self.board.is_valid_move('white', 'bar', 5))
+
+        self.assertFalse(self.board.is_valid_move('white', 'a', 5))
+
+        self.board.__pos__[2] = None
+        self.assertFalse(self.board.is_valid_move('white', 2, 5))
+
+        self.board.__pos__[10] = ['white', 1]
+        self.assertFalse(self.board.is_valid_move('white', 10, 9))
+
+        self.board.__pos__[10] = ['white', 1]
+        self.board.__pos__[13] = None
+        self.assertTrue(self.board.is_valid_move('white', 10, 13))
+
+class TestBoardMore(unittest.TestCase):
+    def test_draw_with_many_pieces(self):
+        b = Board()
+        b._Board__pos__ = [None for _ in range(24)]
+        b._Board__pos__[0] = ['white', 7]
+        board_draw = b.draw()
+        self.assertEqual(len(board_draw), 12)
+        self.assertEqual(len(board_draw[0]), 5)
+        found_non_space = any(cell != ' ' for row in board_draw for cell in row)
+        self.assertTrue(found_non_space)
+
+    def test_draw_full_board_various(self):
+        b = Board()
+        b._Board__pos__ = [None for _ in range(24)]
+        b._Board__pos__[12] = ['black', 6]
+        b._Board__pos__[11] = ['white', 2]
+        res = b.draw_full_board()
+        self.assertIn('upper', res)
+        self.assertIn('lower', res)
+
+    def test_display_board_console_runs(self):
+        b = Board()
+        with patch('builtins.print') as mock_print:
+            b.display_board_console()
+            self.assertTrue(mock_print.called)
+
+    def test_move_piece_stack_increment(self):
+        b = Board()
+        res = b.move_piece(11, 16, 'white')
+        self.assertTrue(res)
+        state = b.get_state()['positions']
+        self.assertEqual(state[11][1], 4)
+        self.assertEqual(state[16][1], 4)
+
+    def test_enter_from_bar_blocked_and_invalid_zone(self):
+        b = Board()
+        b._Board__pos__ = [None for _ in range(24)]
+        b._Board__pos__[18] = ['black', 2]
+        b._Board__bar__ = {'white': 1, 'black': 0}
+        res = b.enter_from_bar(18, 'white')
+        self.assertFalse(res)
+
+        b._Board__bar__ = {'white': 1, 'black': 0}
+        res2 = b.enter_from_bar(0, 'white')
+        self.assertFalse(res2)
+
+    def test_is_target_valid_out_of_range(self):
+        b = Board()
+        self.assertFalse(b.is_target_valid(-1, 'white'))
+        self.assertFalse(b.is_target_valid(24, 'black'))
+
+    def test_is_target_valid_enemy_block(self):
+        b = Board()
+        self.assertFalse(b.is_target_valid(5, 'white'))
+
+    def test_draw_full_board_numeric_overflow(self):
+        b = Board()
+        self.assertIsNotNone(b.draw_full_board())
+
+    def test_has_pieces_in_home_board_black_and_bar(self):
+        b = Board()
+        b._Board__pos__ = [None for _ in range(24)]
+        b._Board__pos__[10] = ['black', 1]
+        self.assertFalse(b.has_pieces_in_home_board('black'))
+
+        b._Board__pos__ = [None for _ in range(24)]
+        b._Board__pos__[0] = ['black', 15]
+        b._Board__bar__ = {'white': 0, 'black': 1}
+        self.assertFalse(b.has_pieces_in_home_board('black'))
+
+
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-
-
-
