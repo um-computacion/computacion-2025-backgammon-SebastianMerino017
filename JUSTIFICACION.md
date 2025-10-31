@@ -97,3 +97,5 @@ TOTAL               798     64    92%
 
 ### Diagrama de Clases (UML)
 
+![Diagrama de Clases](assets/diagrama/image.png)
+
