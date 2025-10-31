@@ -1,14 +1,16 @@
+## Prompt de Desarrollo:
+
 Este documento registra la secuencia de prompts utilizados durante el desarrollo del juego Backgammon, con el objetivo de mantener una trazabilidad detallada del proceso de diseño e implementación.
 
 1. Lógica Central (Core) - Definición de Entidades
 
-checker.py (Fichas)
+# checker.py (Fichas)
 
     Prompt Inicial: "Crear una clase Checker simple en Python. Solo necesita almacenar su color (ej. 'white' o 'black') y su posición actual en el tablero (un índice del 0 al 23)."
 
     Refinamiento: "Añadir estado de 'capturada' a la clase Checker. Necesito un método capture() que ponga un flag __is_captured__ = True y __position__ = None, y un método release(position) que la devuelva al juego en una posición específica, marcando __is_captured__ = False."
 
-dice.py (Dados)
+# dice.py (Dados)
 
     Prompt Inicial: "Necesito una forma de tirar los dados. Crea una función get_dice() que devuelva una tupla de dos números aleatorios (1-6)."
 
@@ -28,7 +30,7 @@ dice.py (Dados)
 
         Tener un método has_available_values() que devuelva True si get_available_values() no está vacía."
 
-player.py (Jugadores)
+# player.py (Jugadores)
 
     Prompt Inicial: "Crear la clase Player. Debe tener un name y un color ('white' o 'black') pasados en el constructor."
 
@@ -42,7 +44,7 @@ player.py (Jugadores)
 
     Refinamiento de Fichas: "Añadir un método bear_off_piece() que actualice este contador game_pieces (reste 1 de 'on_board', sume 1 a 'off_board' para el color del jugador)."
 
-board.py (Tablero)
+# board.py (Tablero)
 
     Prompt de Estructura: "Generar la clase Board para Backgammon. La estructura principal debe ser una lista __pos__ de 24 elementos. Cada elemento debe ser None si está vacío, o una lista ['color', count] (ej. ['white', 2]) si tiene fichas."
 
@@ -138,7 +140,7 @@ board.py (Tablero)
 
 3. Interfaces de Usuario
 
-cli.py (Interfaz de Consola)
+# cli.py (Interfaz de Consola)
 
     Prompt de Estructura: "Crear un cli.py para jugar en consola. Debe tener una clase CLI que contenga una instancia de Game (self.__game__)."
 
@@ -174,7 +176,7 @@ cli.py (Interfaz de Consola)
 
     Refinamiento de Handlers: "Implementar handle_roll(), handle_enter_from_bar(), handle_bear_off() y handle_end_turn() de la misma manera, llamando a los métodos correspondientes en self.__game__ y manejando sus posibles excepciones."
 
-pygame_ui.py (Interfaz Gráfica)
+# pygame_ui.py (Interfaz Gráfica)
 
     Prompt Inicial: "Crear una interfaz gráfica con Pygame. Inicializar Pygame y crear una ventana (ej. 1000x700). Definir constantes de colores (BG_COLOR, TRI_A, TRI_B, WHITE, BLACK) y de layout (MARGIN_X, MARGIN_Y)."
 
