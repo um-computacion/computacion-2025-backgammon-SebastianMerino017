@@ -69,5 +69,5 @@ Se utilizó el módulo `unittest` de Python para garantizar el correcto funciona
 
 ## 5. Anexos
 
-### Diagrama de Clases (UML)
+ Diagrama de Clases (UML)
 
